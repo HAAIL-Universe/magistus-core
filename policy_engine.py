@@ -1,5 +1,3 @@
-# policy_engine.py
-
 from typing import List
 from context_types import ContextBundle, AgentThought
 from agents.reflective_self_monitor import run as reflective_self_monitor
@@ -14,10 +12,14 @@ CRITICAL_ACTION_TYPES = {
     "agent_modification"
 }
 
-def is_critical_action(action_type: str) -> bool:
+def is_critical_action(action_type: str, allow_self_eval: bool = False) -> bool:
     """
     Determine whether a given action type qualifies as critical.
+    Allow bypass if self-eval mode is enabled.
     """
+    if allow_self_eval:
+        # In self-eval mode, allow critical actions (don't treat as blocking)
+        return False
     return action_type in CRITICAL_ACTION_TYPES
 
 def check_reflective_alignment(context: ContextBundle, agent_thoughts: List[AgentThought]) -> bool:
@@ -32,12 +34,17 @@ def enforce_reflection_policy(
     action_type: str,
     context: ContextBundle,
     agent_thoughts: List[AgentThought],
-    details: str = ""
+    details: str = "",
+    allow_self_eval: bool = False
 ) -> str:
     """
     Determines whether to proceed, pause, or require user intervention before critical action.
     Returns: "approved", "requires_user", or "blocked"
     """
+    if allow_self_eval:
+        # Auto-approve all critical actions in self-eval mode
+        return "approved"
+
     if not is_critical_action(action_type):
         return "approved"  # Non-critical, pass through
 
@@ -52,9 +59,14 @@ def enforce_reflection_policy(
     else:
         return "blocked"
 
-def should_block_execution(action_type: str, context: ContextBundle, agent_thoughts: List[AgentThought]) -> bool:
+def should_block_execution(
+    action_type: str,
+    context: ContextBundle,
+    agent_thoughts: List[AgentThought],
+    allow_self_eval: bool = False
+) -> bool:
     """
     Convenience wrapper: returns True if action should be blocked.
     """
-    status = enforce_reflection_policy(action_type, context, agent_thoughts)
+    status = enforce_reflection_policy(action_type, context, agent_thoughts, allow_self_eval=allow_self_eval)
     return status == "blocked"

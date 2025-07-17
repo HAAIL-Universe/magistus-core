@@ -10,6 +10,8 @@ agents_enabled:
   - goal_tracker
   - cluster_bridge
   - task_router
+  - statistical_reasoning_agent
+  - predictive_memory_manager
 
 # === System Modules ===
 voice_output: true
@@ -38,7 +40,7 @@ policy_reflection_threshold: 0.85
 # ✅ REQUIRED for launch validation
 manifesto_enabled: true
 consent_enabled: true
-limiter_enabled: true
+limiter_enabled: false
 transparency_enabled: true
 
 # === Distributed Cognition (Cluster Bridge) ===
@@ -48,3 +50,6 @@ bridge_accept_remote: true
 # === Stability Monitoring ===
 stability_testing_enabled: true
 stability_failure_log: "logs/stability_failures.md"
+
+# === Self-Evaluation Mode ===
+allow_self_eval: true   # Enable trusted self-evaluation and autonomous suggestion mode

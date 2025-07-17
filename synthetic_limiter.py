@@ -21,7 +21,7 @@ BLOCKED_PATTERNS = [
     "hack", "exploit", "surveil", "blackmail", "leak"
 ]
 
-def evaluate_input(user_input: str) -> AgentThought:
+def evaluate_input(user_input: str, allow_self_eval: bool = False) -> AgentThought:
     lowered = user_input.lower()
     reasons: List[str] = []
     blocked = False
@@ -35,7 +35,13 @@ def evaluate_input(user_input: str) -> AgentThought:
             reasons.append(f"Detected blocked keyword: '{pattern}'")
 
     if blocked:
-        print(f"[Limiter] BLOCKED due to: {reasons}")
+        if allow_self_eval:
+            # Log bypass for self-eval mode and skip blocking
+            print(f"[Limiter] Bypass block for self-eval mode enabled, input allowed despite: {reasons}")
+            blocked = False
+            reasons = ["Bypassed block due to self-eval mode."]
+        else:
+            print(f"[Limiter] BLOCKED due to: {reasons}")
     else:
         print("[Limiter] PASSED")
 

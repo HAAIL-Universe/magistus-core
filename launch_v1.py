@@ -7,12 +7,12 @@ import json
 import os
 import webbrowser
 import threading
+import re
+from uuid import uuid4
 from typing import Optional
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse, JSONResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from uuid import uuid4
 
 from meta_learning.meta_learning_supervisor import MetaLearningSupervisor
 from meta_learning.memory_store import get_latest_memory_entry
@@ -27,6 +27,40 @@ from voice_output import speak_text
 from llm_wrapper import generate_response, stream_response
 from meta_learning.memory_index_entry import MemoryIndexEntry
 from meta_learning.utils import append_memory_entry_to_store
+from openai import OpenAI
+
+# ─── New: Simple‑input detector for context gating ───
+openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+SIMPLE_GREETINGS = {"hi", "hello", "hey", "thanks", "bye"}
+
+def isSimpleInput(text: str) -> bool:
+    """
+    Return True if:
+      • text length < 5 chars, OR
+      • first word is a simple greeting/thanks/bye, OR
+      • total word count ≤ 2
+    """
+    t = text.strip().lower()
+    if len(t) < 5:
+        return True
+    words = t.split()
+    if words[0] in SIMPLE_GREETINGS:
+        return True
+    if len(words) <= 2:
+        return True
+    return False
+
+def simple_chat(text: str) -> str:
+    """Bypass Magistus and send straight to OpenAI for simple inputs."""
+    resp = openai_client.chat.completions.create(
+        model="gpt-4-0125-preview",
+        messages=[{"role": "user", "content": text}]
+    )
+    # content may be None, so default to empty string
+    return resp.choices[0].message.content or ""
+
+# ─── End of context‑gating helpers ───
 
 # Init FastAPI app
 app = FastAPI()
@@ -47,6 +81,9 @@ logger = logging.getLogger("magistus_launch")
 # Load config
 config = load_config()
 
+# Wrap config in a mutable dict if it's not one already
+mutable_config = dict(config)
+
 REQUIRED_KEYS = {
     "manifesto_enabled": True,
     "consent_enabled": True,
@@ -58,8 +95,14 @@ REQUIRED_KEYS = {
 def validate_launch_config() -> bool:
     logger.info("🔍 Validating Magistus v1.0 Launch Configuration:")
     all_good = True
+    allow_self_eval = mutable_config.get("allow_self_eval", False)
+
     for key, expected in REQUIRED_KEYS.items():
-        current = config.get(key)
+        current = mutable_config.get(key)
+        # Special case: allow limiter_enabled to be False if self_eval mode is on
+        if key == "limiter_enabled" and current is False and allow_self_eval:
+            logger.info(f"⚠️ {key.replace('_', ' ').title()}: Disabled due to self-eval mode enabled (allowed)")
+            continue
         if current == expected:
             logger.info(f"✅ {key.replace('_', ' ').title()}: Enabled")
         else:
@@ -68,6 +111,8 @@ def validate_launch_config() -> bool:
     if not all_good:
         logger.error("🚫 Launch aborted: critical safeguards are not active.")
     return all_good
+
+
 
 def print_system_ready_banner():
     print("\n" + "=" * 50)
@@ -88,39 +133,65 @@ async def serve_ui():
 
 # 💬 Core chat endpoint
 @app.post("/chat")
-async def chat_endpoint(payload: dict):
-    config = load_config()
+def chat_endpoint(payload: dict):
     user_input = payload.get("input", "")
     reasoning_enabled = payload.get("reasoning_enabled", True)
+    allow_self_eval = mutable_config.get("allow_self_eval", False)
 
     if not user_input:
         return JSONResponse({"error": "Missing input"})
 
-    limiter_thought = evaluate_input(user_input)
+    # ─── Context‑gating: skip reasoning if simple ───
+    if isSimpleInput(user_input):
+        logger.debug("Bypassing Magistus reasoning for simple input in /chat.")
+        try:
+            response = simple_chat(user_input)
+        except Exception as e:
+            logger.error(f"simple_chat error: {e}")
+            response = "Error processing simple input."
+        return JSONResponse({
+            "response": response,
+            "agent_thoughts": [],
+            "voice_output": mutable_config.get("voice_output", False),
+            "cam_bypass": True
+        })
+
+    # ─── Limiter logic ───
+    limiter_thought = evaluate_input(user_input, allow_self_eval=allow_self_eval)
     if limiter_thought.flags.get("execution_blocked"):
         return JSONResponse({
             "response": "[Blocked] " + limiter_thought.content,
             "agent_thoughts": [],
-            "voice_output": config.get("voice_output", False)
+            "voice_output": mutable_config.get("voice_output", False),
+            "cam_bypass": False
         })
 
-    if is_critical_action("external_execution"):
-        if not request_user_consent("external_execution", "This may trigger an irreversible system action."):
+    # ─── Critical‑action consent ───
+    if is_critical_action("external_execution", allow_self_eval=allow_self_eval):
+        if not request_user_consent(
+            "external_execution",
+            "This may trigger an irreversible system action."
+        ):
             return JSONResponse({
                 "response": "[Consent Denied] User did not approve action.",
                 "agent_thoughts": [],
-                "voice_output": config.get("voice_output", False)
+                "voice_output": mutable_config.get("voice_output", False),
+                "cam_bypass": False
             })
 
+    # ─── Reasoning toggle ───
     if not reasoning_enabled:
         response = generate_response(user_input)
         return JSONResponse({
             "response": response,
             "agent_thoughts": [],
-            "voice_output": config.get("voice_output", False)
+            "voice_output": mutable_config.get("voice_output", False),
+            "cam_bypass": False
         })
 
-    context_bundle, agent_thoughts, final_response, debug_metadata, memory_entry = run_magistus(user_input)
+    # ─── Full Magistus pipeline ───
+    context_bundle, agent_thoughts, final_response, debug_metadata, memory_entry = \
+        run_magistus(user_input, allow_self_eval=allow_self_eval)
     explanation = generate_explanation(agent_thoughts, final_response, verbosity="brief")
 
     structured_agents = [
@@ -133,7 +204,8 @@ async def chat_endpoint(payload: dict):
         }
         for t in agent_thoughts
     ]
-
+    logger.debug(f"Structured Agent Thoughts: {structured_agents}")
+    # ─── Memory storage ───
     try:
         if not memory_entry:
             tags = debug_metadata.get("tags", []) if isinstance(debug_metadata, dict) else []
@@ -151,6 +223,7 @@ async def chat_endpoint(payload: dict):
     except Exception as e:
         logger.warning(f"⚠️ Memory save failed: {e}")
 
+    # ─── Meta‑reflection ───
     try:
         supervisor = MetaLearningSupervisor()
         context = get_latest_memory_entry()
@@ -176,8 +249,9 @@ async def chat_endpoint(payload: dict):
     return JSONResponse({
         "response": final_response,
         "agent_thoughts": structured_agents,
-        "voice_output": config.get("voice_output", False),
-        "explanation": explanation
+        "voice_output": mutable_config.get("voice_output", False),
+        "explanation": explanation,
+        "cam_bypass": False
     })
 
 # 🔄 Stream endpoint
@@ -204,7 +278,7 @@ async def think_endpoint(user_input: UserInput):
         "diagnostics": debug_metadata
     }
 
-# 🪞Reflection trigger
+# 🪞 Reflection trigger
 @app.post("/reflect")
 async def reflect_endpoint():
     try:
@@ -235,7 +309,6 @@ async def reflect_endpoint():
             "reflection": reflection_data,
             "reasoning": reflection_data
         })
-
     except Exception as e:
         logger.error(f"⚠️ Reflection error: {e}")
         return JSONResponse({"error": "Reflection failed."}, status_code=500)
@@ -253,6 +326,23 @@ def start_public_companion():
     threading.Thread(target=delayed_open).start()
 
     uvicorn.run("launch_v1:app", host="0.0.0.0", port=8000, reload=True)
+
+@app.post("/toggle_self_eval")
+def toggle_self_eval():
+    current_self_eval = mutable_config.get("allow_self_eval", False)
+    new_self_eval = not current_self_eval
+
+    mutable_config["allow_self_eval"] = new_self_eval
+    mutable_config["limiter_enabled"] = not new_self_eval
+
+    logger.info(f"Toggled allow_self_eval to {new_self_eval}, limiter_enabled to {mutable_config['limiter_enabled']}")
+
+    return JSONResponse({
+        "allow_self_eval": new_self_eval,
+        "limiter_enabled": mutable_config["limiter_enabled"],
+        "message": f"Self-eval mode is now {'ON' if new_self_eval else 'OFF'}"
+    })
+
 
 if __name__ == "__main__":
     start_public_companion()

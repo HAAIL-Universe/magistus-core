@@ -1,499 +1,886 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- ==================== METADATA ==================== -->
+  <!-- Character encoding and compatibility -->
   <meta charset="UTF-8" />
-  <title>Magistus Trinity UI — TEST UPDATE</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <!-- Viewport for responsive design -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Page title & description for SEO and accessibility -->
+  <title>Magistus Trinity UI</title>
+  <meta name="description" content="Magistus AGI conversational interface with reasoning, self‑evaluation, and TTS controls." />
+  <!-- Theme color for mobile browsers -->
+  <meta name="theme-color" content="#0a0a0e" />
+  <!-- Favicon -->
+  <link rel="icon" href="/assets/favicon.ico" type="image/x-icon" />
+
+  <!-- ==================== CSS VARIABLES & BASE STYLES ==================== -->
   <style>
-    /* === Time-of-Day Theme Variables === */
+    /* — Root design tokens: colors, typography, spacing, borders, animations, z‑indices — */
     :root {
-      --bg-morning: radial-gradient(circle, #f5f7fa, #c3cfe2);
-      --bg-afternoon: radial-gradient(circle, #e0eafc, #cfdef3);
-      --bg-evening: radial-gradient(circle, #2c3e50, #4ca1af);
-      --bg-night: radial-gradient(circle, #0a0a0a, #0e0e0e);
-      --agent-default: #00ffbf;
-      --agent-temporal: #42a5f5;
-      --agent-ethical: #90ee90;
-      --agent-reflective: #ffd54f;
+      /* Color Palette: stealthy dark mode with subtle gold accent */
+      --color-bg-base:           linear-gradient(180deg, #0a0a0e 0%, #040406 100%);
+      --color-bg-surface:        #121216;
+      --color-bg-muted:          #08080b;
+      --color-text-primary:      #d8e8ff;
+      --color-text-secondary:    #a0b0c0;
+      --color-accent:            #5a90ff;
+      --color-gold:              #bfa45c;
+      --color-gold-glow:         rgba(191,164,92,0.4);
+      --color-danger:            #d95555;
+      /* Agent‑specific hues */
+      --color-agent-default:     #00ffbf;
+      --color-agent-temporal:    #6a5acd;
+      --color-agent-goal:        #ff9800;
+      --color-agent-meta:        #26c6da;
+      --color-agent-dmn:         #ab47bc;
+      --color-agent-prefrontal:  #81c784;
+
+      /* Typography */
+      --font-family-base:        'Segoe UI', sans-serif;
+      --font-size-xs:            0.75rem;
+      --font-size-sm:            0.875rem;
+      --font-size-md:            1rem;
+      --font-size-lg:            1.25rem;
+      --font-size-xl:            1.5rem;
+      --line-height-base:        1.6;
+
+      /* Spacing */
+      --spacing-xs:              0.25rem;
+      --spacing-sm:              0.5rem;
+      --spacing-md:              1rem;
+      --spacing-lg:              1.5rem;
+      --spacing-xl:              2rem;
+
+      /* Borders & Radii */
+      --border-width:            1px;
+      --radius-sm:               4px;
+      --radius-md:               8px;
+      --radius-lg:               16px;
+
+      /* Animation */
+      --anim-duration-fast:      0.3s;
+      --anim-duration-medium:    0.4s;
+      --anim-ease:               ease;
+
+      /* Z‑Index Layers */
+      --z-dropdown:              1000;
+      --z-modal:                 1100;
     }
 
-    * {
-      box-sizing: border-box;
-      font-family: 'Segoe UI', sans-serif;
-      transition: background 0.4s ease, color 0.4s ease, box-shadow 0.3s ease;
-    }
-
+    /* — Global reset & accessibility enhancements — */
+    *, *::before, *::after { box-sizing: border-box; }
+    html { font-size: 100%; }
     body {
       margin: 0;
-      padding: 0;
-      background: var(--bg-night);
-      color: #ffffff;
+      font-family: var(--font-family-base);
+      font-size: var(--font-size-md);
+      line-height: var(--line-height-base);
+      background: var(--color-bg-base);
+      color: var(--color-text-primary);
       display: flex;
       flex-direction: column;
       height: 100vh;
-      overflow: hidden;
+    }
+    a {
+      color: var(--color-accent);
+      text-decoration: none;
+    }
+    a:hover,
+    a:focus {
+      text-decoration: underline;
     }
 
-    header {
-      background: linear-gradient(to right, #00c6ff, #0072ff);
-      padding: 1rem;
-      text-align: center;
-      font-size: 1.8rem;
-      font-weight: bold;
-      letter-spacing: 0.05em;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    /* Utility: visually hide elements but keep them accessible */
+    .visually-hidden {
+      position: absolute !important;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* Focus styles per WCAG with gold outline glow */
+    :focus {
+      outline: 2px solid var(--color-gold);
+      outline-offset: 2px;
+    }
+
+    /* ==================== LAYOUT: Header, Main, Footer ==================== */
+    header[role="banner"] {
+      background: var(--color-bg-muted);
+      padding: var(--spacing-md);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      border-bottom: var(--border-width) solid rgba(255,255,255,0.05);
+    }
+    header[role="banner"] .branding[role="heading"] {
+      font-size: var(--font-size-lg);
+      font-weight: 600;
+    }
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+      padding: var(--spacing-md);
+      overflow-y: auto;
+    }
+    form#chatForm {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: var(--spacing-sm);
+      background: var(--color-bg-muted);
+      padding: var(--spacing-xs) var(--spacing-md);
+      border: var(--border-width) solid rgba(191,164,92,0.3);
+      border-radius: var(--radius-md);
+      box-shadow: 0 0 8px var(--color-gold-glow);
+    }
+    /* Make input fill all horizontal space except buttons */
+    #userInput {
+      flex: 1;
+      padding: var(--spacing-sm);
+      font-size: var(--font-size-md);
+      border: var(--border-width) solid rgba(191,164,92,0.3);
+      border-radius: var(--radius-sm);
+      background: var(--color-bg-surface);
+      color: var(--color-text-primary);
+      box-shadow: 0 0 8px var(--color-gold-glow);
+      resize: none;
+      min-height: 2.5em;
+      max-height: 6em;
+      overflow-y: auto;
+    }
+    /* Style buttons in form */
+    #micBtn,
+    #sendBtn {
+      background: var(--color-bg-surface);
+      color: var(--color-text-primary);
+      border: var(--border-width) solid rgba(191,164,92,0.3);
+      border-radius: var(--radius-sm);
+      padding: var(--spacing-xs) var(--spacing-sm);
+      cursor: pointer;
+      box-shadow: 0 0 8px var(--color-gold-glow);
+      transition: background var(--anim-duration-fast) var(--anim-ease),
+                  box-shadow var(--anim-duration-fast) var(--anim-ease);
+      flex-shrink: 0;
+    }
+    #micBtn:hover,
+    #sendBtn:hover,
+    #micBtn:focus,
+    #sendBtn:focus {
+      box-shadow: 0 0 12px rgba(191,164,92,0.6);
     }
 
+    /* ==================== CONTROL GROUP & TOGGLES ==================== */
+    .control-group {
+      display: flex;
+      gap: var(--spacing-sm);
+    }
+    .toggle-btn {
+      background: var(--color-bg-surface);
+      color: var(--color-text-primary);
+      border: var(--border-width) solid rgba(191,164,92,0.3);
+      border-radius: var(--radius-sm);
+      padding: var(--spacing-xs) var(--spacing-sm);
+      cursor: pointer;
+      box-shadow: 0 0 8px var(--color-gold-glow);
+      transition: background var(--anim-duration-fast) var(--anim-ease),
+                  box-shadow var(--anim-duration-fast) var(--anim-ease);
+    }
+    .toggle-btn[aria-checked="true"] {
+      box-shadow: 0 0 12px rgba(191,164,92,0.6);
+    }
+    .toggle-btn:hover,
+    .toggle-btn:focus {
+      box-shadow: 0 0 12px rgba(191,164,92,0.6);
+    }
+
+    /* ==================== CHAT CONTAINER & MESSAGES ==================== */
     #chat {
       flex: 1;
-      padding: 1rem;
       overflow-y: auto;
-      font-size: 1.1rem;
-      scroll-behavior: smooth;
+      background: var(--color-bg-surface);
+      border: var(--border-width) solid rgba(191,164,92,0.3);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-md);
+      animation: fadeIn var(--anim-duration-medium) var(--anim-ease);
+      box-shadow: 0 0 8px var(--color-gold-glow);
     }
-
-    .speaker-btn:hover {
-      opacity: 0.8;
-      transform: scale(1.05);
-      transition: all 0.2s ease-in-out;
-    }
-
     .msg {
-      margin-bottom: 1rem;
-      padding: 0.85rem 1.2rem;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.04);
-      box-shadow: 0 0 16px rgba(0, 255, 255, 0.12);
-      backdrop-filter: blur(5px);
-      transition: transform 0.2s ease;
+      margin-bottom: var(--spacing-md);
+      animation: slideIn var(--anim-duration-fast) var(--anim-ease);
+    }
+    #liveTranscript {
+      font-style: italic;
+      color: var(--color-text-secondary);
     }
 
-    .msg:hover {
-      transform: translateY(-2px);
-    }
-
-    .user {
-      color: var(--agent-temporal);
-      border-left: 4px solid var(--agent-temporal);
-    }
-
-    .ai {
-      color: var(--agent-ethical);
-      border-left: 4px solid var(--agent-ethical);
-    }
-
+    /* ==================== COLLAPSIBLES & AGENT BOX ==================== */
     .agent-box {
-      margin-top: 1.5rem;
-      border: 1px solid var(--agent-default);
-      border-radius: 12px;
-      box-shadow: 0 0 24px var(--agent-default);
-      animation: fadeIn 0.5s ease-in-out;
-      background: rgba(35, 35, 35, 0.93);
+      background: var(--color-bg-surface);
+      border: var(--border-width) solid rgba(191,164,92,0.15);
+      border-radius: var(--radius-md);
+      margin-top: var(--spacing-md);
+      animation: fadeIn var(--anim-duration-medium) var(--anim-ease);
+      box-shadow: 0 0 8px var(--color-gold-glow);
+    }
+    .collapsible-header {
+      background: rgba(191,164,92,0.1);
+      padding: var(--spacing-sm);
+      cursor: pointer;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: var(--border-width) solid rgba(191,164,92,0.2);
+    }
+    .collapsible-content {
+      padding: var(--spacing-md);
+      display: none;
     }
 
-    .agent-temporal {
-      border-color: var(--agent-temporal);
-      box-shadow: 0 0 20px var(--agent-temporal);
+    /* ==================== FEEDBACK MODAL ==================== */
+    .modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: var(--z-modal);
+    }
+    .modal.hidden {
+      display: none;
+    }
+    .modal-content {
+      background: var(--color-bg-surface);
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 0 8px var(--color-gold-glow);
     }
 
-    .agent-ethical {
-      border-color: var(--agent-ethical);
-      box-shadow: 0 0 20px var(--agent-ethical);
+    /* ==================== KEYFRAMES ==================== */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(calc(var(--spacing-sm) * 2)); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+
+  <!-- ==================== EXTERNAL RESOURCES (PLACEHOLDERS) ==================== -->
+  <!-- <link rel="stylesheet" href="css/styles.css"> -->
+  <!-- <link rel="manifest" href="/site.webmanifest"> -->
+</head>
+
+<body>
+  <!-- ==================== STYLES: Dark Mode & Gold Glow ==================== -->
+  <style>
+    /* Reset & base */
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      font-family: var(--font-family-base);
+      background: var(--color-bg-base);
+      color: var(--color-text-primary);
+    }
+    a {
+      color: var(--color-accent);
+      text-decoration: none;
+    }
+    a:hover, a:focus {
+      text-decoration: underline;
     }
 
-    .agent-reflective {
-      border-color: var(--agent-reflective);
-      box-shadow: 0 0 20px var(--agent-reflective);
+    /* Focus outline with gold glow */
+    :focus {
+      outline: 2px solid var(--color-gold);
+      outline-offset: 2px;
+    }
+
+    /* HEADER: Branding & Controls */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--spacing-md);
+      background: var(--color-bg-muted);
+      border-bottom: var(--border-width) solid rgba(255,255,255,0.05);
+    }
+    .branding {
+      font-size: var(--font-size-xl);
+      font-weight: bold;
+      color: var(--color-text-primary);
+    }
+    .control-group {
+      display: flex;
+      gap: var(--spacing-sm);
+    }
+    .toggle-button {
+      background: var(--color-bg-surface);
+      color: var(--color-text-primary);
+      border: var(--border-width) solid var(--color-gold);
+      border-radius: var(--radius-sm);
+      padding: var(--spacing-xs) var(--spacing-sm);
+      cursor: pointer;
+      box-shadow: 0 0 6px var(--color-gold-glow);
+      transition: background var(--anim-duration-fast) var(--anim-ease),
+                  box-shadow var(--anim-duration-fast) var(--anim-ease);
+    }
+    .toggle-button[aria-checked="true"],
+    .toggle-button:hover,
+    .toggle-button:focus {
+      box-shadow: 0 0 10px rgba(191,164,92,0.6);
+      background: rgba(255,255,255,0.05);
+    }
+
+    /* MAIN: Chat area */
+    main#mainContent {
+      flex: 1;
+      overflow-y: auto;
+      padding: var(--spacing-md);
+      background: var(--color-bg-surface);
+    }
+    #chat {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+    .msg {
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      border: var(--border-width) solid var(--color-gold);
+      box-shadow: 0 0 6px var(--color-gold-glow);
+      max-width: 80%;
+      animation: fadeIn var(--anim-duration-medium) var(--anim-ease);
+    }
+    .msg.user {
+      background: var(--color-bg-muted);
+      align-self: flex-end;
+    }
+    .msg.ai {
+      background: var(--color-bg-base);
+      align-self: flex-start;
+    }
+    .msg-header {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+    .speaker-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: var(--font-size-md);
+      color: var(--color-text-primary);
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    #liveTranscript {
+      font-style: italic;
+      color: var(--color-text-secondary);
+    }
+
+    /* — Agent Reasoning Breakdown Panel — */
+    .agent-box {
+      background: var(--color-bg-muted);
+      border: var(--border-width) solid var(--color-gold);
+      border-radius: var(--radius-md);
+      box-shadow: 0 0 6px var(--color-gold-glow);
+      overflow: hidden;
+      width: 100%;
+      margin-top: var(--spacing-sm);
+      animation: fadeIn var(--anim-duration-medium) var(--anim-ease);
     }
 
     .collapsible-header {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      padding: var(--spacing-sm) var(--spacing-md);
+      background: var(--color-bg-surface);
       cursor: pointer;
-      padding: 1rem;
-      color: #00ffe0;
-      font-size: 1.3rem;
-      font-weight: bold;
-      border-bottom: 1px solid #00ffe0;
       user-select: none;
+      border-bottom: var(--border-width) solid rgba(255,255,255,0.05);
     }
 
-    .collapsible-arrow {
-      font-size: 1.3rem;
-      transition: transform 0.3s ease;
-    }
-
-    .collapsible-header:hover .collapsible-arrow {
-      transform: rotate(90deg);
+    .collapsible-header .collapsible-arrow {
+      margin-left: auto;
+      transition: transform var(--anim-duration-fast) var(--anim-ease);
+      color: var(--color-text-secondary);
     }
 
     .collapsible-content {
-      display: none;
-      padding: 0 1rem 1rem 1rem;
-      animation: fadeIn 0.3s ease;
+      max-height: 0;
+      overflow: hidden;
+      transition:
+        max-height var(--anim-duration-medium) var(--anim-ease),
+        padding var(--anim-duration-medium) var(--anim-ease);
+      padding: 0 var(--spacing-md);
     }
 
-    .agent-box p {
-      margin: 0.3rem 0;
+    .collapsible-content.expanded {
+      max-height: 800px;
+      padding: var(--spacing-md);
     }
 
-    .agent-box ul {
-      margin-top: 0.2rem;
-      padding-left: 1.2rem;
-    }
-
-    .flags {
-      color: #ffcc80;
-      font-size: 0.9rem;
-      font-weight: bold;
-      letter-spacing: 0.5px;
-    }
-
-    form {
+    /* FOOTER: Input Form */
+    form#chatForm {
       display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 1rem;
-      background: #1a1a1a;
-      border-top: 1px solid #333;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-md);
+      background: var(--color-bg-muted);
+      border-top: var(--border-width) solid rgba(255,255,255,0.05);
     }
-
-    input[type="text"] {
+    .input-group {
+      display: flex;
       flex: 1;
-      padding: 0.75rem;
-      border: none;
-      border-radius: 6px;
-      font-size: 1.1rem;
-      background: #222;
-      color: #fff;
+      gap: var(--spacing-sm);
+    }
+    .input-group input {
+      flex: 1;
+      padding: var(--spacing-sm);
+      background: var(--color-bg-surface);
+      color: var(--color-text-primary);
+      border: var(--border-width) solid var(--color-gold);
+      border-radius: var(--radius-sm);
+      box-shadow: 0 0 6px var(--color-gold-glow);
+    }
+    .input-group input:focus {
       outline: none;
-      transition: box-shadow 0.2s ease;
+      box-shadow: 0 0 10px rgba(191,164,92,0.6);
     }
-
-    input[type="text"]:focus {
-      box-shadow: 0 0 6px #00c6ffaa;
-    }
-
-    button {
-      padding: 0.75rem 1rem;
-      background: linear-gradient(to right, #00c6ff, #0072ff);
-      border: none;
-      color: white;
-      font-size: 1rem;
-      border-radius: 6px;
+    .input-group button {
+      background: var(--color-bg-surface);
+      color: var(--color-text-primary);
+      border: var(--border-width) solid var(--color-gold);
+      border-radius: var(--radius-sm);
+      padding: var(--spacing-xs) var(--spacing-sm);
       cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 0 10px #00c6ffaa;
+      box-shadow: 0 0 6px var(--color-gold-glow);
+      transition: box-shadow var(--anim-duration-fast) var(--anim-ease);
+    }
+    .input-group button:hover,
+    .input-group button:focus {
+      box-shadow: 0 0 10px rgba(191,164,92,0.6);
+      outline: none;
     }
 
-    button:hover {
-      background: linear-gradient(to right, #00ffd5, #00aaff);
-      box-shadow: 0 0 16px #00fff7cc;
+    /* FEEDBACK MODAL & BACKDROP */
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: var(--z-modal);
     }
-
-    button:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
+    .modal-backdrop.hidden {
+      display: none;
     }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    .modal {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--color-bg-surface);
+      border: var(--border-width) solid var(--color-gold);
+      border-radius: var(--radius-md);
+      box-shadow: 0 0 10px var(--color-gold-glow);
+      z-index: calc(var(--z-modal) + 1);
+      width: 90%; max-width: 400px;
+    }
+    .modal.hidden {
+      display: none;
+    }
+    .modal-content {
+      display: flex;
+      flex-direction: column;
+      padding: var(--spacing-md);
+    }
+    .modal-content h2 {
+      margin: 0;
+      color: var(--color-text-primary);
+    }
+    .modal-content textarea {
+      width: 100%;
+      padding: var(--spacing-sm);
+      background: var(--color-bg-muted);
+      color: var(--color-text-primary);
+      border: var(--border-width) solid var(--color-gold);
+      border-radius: var(--radius-sm);
+      box-shadow: 0 0 6px var(--color-gold-glow);
+      resize: vertical;
+    }
+    .modal-content textarea:focus {
+      outline: none;
+      box-shadow: 0 0 10px rgba(191,164,92,0.6);
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--spacing-sm);
     }
   </style>
-</head>
-<body>
-  <header>
-    <span>🌐 Magistus AGI</span>
-    <div>
-      <button id="toggleReasoning">🧠 Reasoning: ON</button>
 
-      <button id="ttsToggle">🔈</button>
+  <!-- ==================== HEADER: Branding & Global Controls ==================== -->
+  <header role="banner">
+    <div class="branding" role="heading" aria-level="1">🌐 Magistus AGI</div>
+    <div class="control-group" role="group" aria-label="Global controls">
+      <button id="toggleReasoning" type="button" class="toggle-button" role="switch" aria-checked="true" aria-label="Toggle reasoning">
+        🧠 Reasoning: ON
+      </button>
+      <button id="selfEvalToggle" type="button" class="toggle-button" role="switch" aria-checked="false" aria-label="Toggle self‑evaluation">
+        📝 Self‑Eval: OFF
+      </button>
+      <button id="ttsToggle" type="button" class="toggle-button" role="switch" aria-checked="true" aria-label="Toggle text‑to‑speech">
+        🔈
+      </button>
+      <button id="feedbackBtn" type="button" class="toggle-button" aria-haspopup="dialog" aria-controls="feedbackModal" aria-label="Open feedback form">
+        💬 Feedback
+      </button>
     </div>
   </header>
 
-  <div id="chat"></div>
-  <div id="liveTranscript" style="display: none; font-style: italic; color: #aaa; padding: 0 1rem;"></div>
+  <!-- ==================== MAIN: Conversation Display ==================== -->
+  <main id="mainContent" role="main">
+    <div id="chat" aria-live="polite" aria-label="Conversation"></div>
+    <div id="liveTranscript" class="visually-hidden" aria-live="assertive" aria-label="Live transcript"></div>
+  </main>
 
-  <form id="chatForm">
-    <input type="text" id="userInput" placeholder="Type your message..." autocomplete="off" />
-    <button type="button" id="micBtn">🎙️</button>
-    <button type="submit">Send</button>
+  <!-- ==================== FOOTER: Input Form ==================== -->
+  <form id="chatForm" role="form" aria-label="Chat input form">
+    <div class="input-group">
+      <textarea
+        id="userInput"
+        name="userInput"
+        aria-label="Type your message"
+        placeholder="Type your message..."
+        autocomplete="off"
+        rows="2"
+        style="resize: vertical;"
+        required
+      ></textarea>
+      <button type="button" id="micBtn" aria-label="Start voice input">🎙️</button>
+      <button type="submit" id="sendBtn" aria-label="Send message">Send</button>
+    </div>
   </form>
 
-  <script>
-    const chat = document.getElementById('chat');
-    const form = document.getElementById('chatForm');
-    const input = document.getElementById('userInput');
-    const ttsToggle = document.getElementById('ttsToggle');
-    const toggleBtn = document.getElementById("toggleReasoning");
-    const transcriptDiv = document.getElementById("liveTranscript");
+  <!-- ==================== MODAL: Feedback Form (hidden by default) ==================== -->
+  <div id="feedbackBackdrop" class="modal-backdrop hidden"></div>
+  <div
+    id="feedbackModal"
+    class="modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="feedbackTitle"
+  >
+    <div class="modal-content">
+      <h2 id="feedbackTitle">Feedback</h2>
+      <p id="feedbackDesc" class="visually-hidden">
+        Enter your feedback to help improve Magistus.
+      </p>
+      <textarea
+        id="feedbackInput"
+        aria-describedby="feedbackDesc"
+        rows="4"
+        placeholder="Your feedback..."
+        required
+      ></textarea>
+      <div class="modal-actions">
+        <button id="submitFeedback" type="button" aria-label="Submit feedback">Submit</button>
+        <button id="closeFeedback" type="button" aria-label="Close feedback dialog">Close</button>
+      </div>
+    </div>
+  </div>
 
-    function speak(text) {
-      if (!ttsEnabled || !text) return;
+  <!-- ==================== SCRIPTS: UI Logic & Event Handlers ==================== -->
+<script>
+  // — Element references —
+  const chat            = document.getElementById('chat');
+  const form            = document.getElementById('chatForm');
+  const input           = document.getElementById('userInput');
+  const ttsToggle       = document.getElementById('ttsToggle');
+  const toggleBtn       = document.getElementById('toggleReasoning');
+  const selfEvalToggle  = document.getElementById('selfEvalToggle');
+  const feedbackBtn     = document.getElementById('feedbackBtn');
+  const feedbackModal   = document.getElementById('feedbackModal');
+  const feedbackBackdrop= document.getElementById('feedbackBackdrop');
+  const closeFeedback   = document.getElementById('closeFeedback');
+  const submitFeedback  = document.getElementById('submitFeedback');
+  const feedbackInput   = document.getElementById('feedbackInput');
+  const transcriptDiv   = document.getElementById('liveTranscript');
+  const micBtn          = document.getElementById('micBtn');
 
-      const trySpeak = () => {
-        const voices = speechSynthesis.getVoices();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'en-GB';
+  // — State initialization —
+  let reasoningEnabled = JSON.parse(localStorage.getItem("reasoning_enabled") || "true");
+  let ttsEnabled       = true;
+  let selfEvalEnabled  = JSON.parse(localStorage.getItem("self_eval_enabled")  || "false");
 
-        const preferredVoice = voices.find(v =>
-          v.name.includes("Microsoft Libby") || v.name.includes("Google UK English Female")
-        );
+  // — Update toggle labels, ARIA states & styling —
+  function updateToggles() {
+    toggleBtn.textContent      = reasoningEnabled ? "🧠 Reasoning: ON"  : "🧠 Reasoning: OFF";
+    toggleBtn.setAttribute('aria-checked', reasoningEnabled);
+    ttsToggle.textContent      = ttsEnabled      ? "🔈"                : "🔇";
+    ttsToggle.setAttribute('aria-checked', ttsEnabled);
+    selfEvalToggle.textContent = selfEvalEnabled  ? "📝 Self‑Eval: ON"  : "📝 Self‑Eval: OFF";
+    selfEvalToggle.setAttribute('aria-checked', selfEvalEnabled);
+  }
+  updateToggles();
 
-        if (preferredVoice) {
-          utterance.voice = preferredVoice;
-          console.log("✅ Using voice:", preferredVoice.name);
-        } else {
-          console.warn("⚠️ Preferred voice not found, using default.");
-        }
+  // — Toggle event handlers —
+  toggleBtn.addEventListener('click', () => {
+    reasoningEnabled = !reasoningEnabled;
+    localStorage.setItem("reasoning_enabled", JSON.stringify(reasoningEnabled));
+    updateToggles();
+  });
+  ttsToggle.addEventListener('click', () => {
+    ttsEnabled = !ttsEnabled;
+    updateToggles();
+    if (!ttsEnabled && 'speechSynthesis' in window) speechSynthesis.cancel();
+  });
+  selfEvalToggle.addEventListener('click', () => {
+    selfEvalEnabled = !selfEvalEnabled;
+    localStorage.setItem("self_eval_enabled", JSON.stringify(selfEvalEnabled));
+    updateToggles();
+  });
 
-        speechSynthesis.cancel();
-        speechSynthesis.speak(utterance);
-      };
-
-      // Retry if voices aren't loaded yet
-      if (speechSynthesis.getVoices().length === 0) {
-        speechSynthesis.onvoiceschanged = trySpeak;
-      } else {
-        trySpeak();
-      }
+  // — Feedback modal logic: open, close, backdrop click, ESC key —
+  function openFeedback() {
+    feedbackBackdrop.classList.remove('hidden');
+    feedbackModal.classList.remove('hidden');
+    feedbackInput.focus();
+  }
+  function closeFeedbackDialog() {
+    feedbackModal.classList.add('hidden');
+    feedbackBackdrop.classList.add('hidden');
+    feedbackBtn.focus();
+  }
+  feedbackBtn.addEventListener('click', openFeedback);
+  closeFeedback.addEventListener('click', closeFeedbackDialog);
+  feedbackBackdrop.addEventListener('click', closeFeedbackDialog);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !feedbackModal.classList.contains('hidden')) {
+      closeFeedbackDialog();
     }
-
-    let reasoningEnabled = JSON.parse(localStorage.getItem("reasoning_enabled") || "true");
-    let ttsEnabled = true;
-
-    function updateToggleLabel() {
-      toggleBtn.textContent = reasoningEnabled ? "🧠 Reasoning: ON" : "💬 Reasoning: OFF";
-      ttsToggle.textContent = ttsEnabled ? "🔈" : "🔇";
-    }
-    updateToggleLabel();
-
-    toggleBtn.addEventListener("click", () => {
-      reasoningEnabled = !reasoningEnabled;
-      localStorage.setItem("reasoning_enabled", JSON.stringify(reasoningEnabled));
-      updateToggleLabel();
+  });
+  submitFeedback.addEventListener('click', async () => {
+    const feedback = feedbackInput.value.trim();
+    if (!feedback) return;
+    await fetch('/feedback', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ feedback })
     });
+    feedbackInput.value = '';
+    closeFeedbackDialog();
+    alert('Thank you for your feedback!');
+  });
 
-    ttsToggle.addEventListener("click", () => {
-      ttsEnabled = !ttsEnabled;
-      updateToggleLabel();
-      if (!ttsEnabled && 'speechSynthesis' in window) {
-        speechSynthesis.cancel(); // 🔇 stop mid-sentence
-      }
-    });
-
-
-    function appendMessage(text, sender) {
-      const div = document.createElement('div');
-      div.className = 'msg ' + sender;
-
-      let formatted = text
-        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-        .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.+?)\*/g, '<em>$1</em>')
-        .replace(/\n/g, '<br>');
-
-      if (sender === 'user') {
-        div.innerHTML = `<strong>You:</strong><br>${formatted}`;
-      } else {
-        // Speaker button
-        const speakerBtn = document.createElement("button");
-        speakerBtn.textContent = "🔈";
-        speakerBtn.className = "speaker-btn";
-        speakerBtn.style.border = "none";
-        speakerBtn.style.background = "transparent";
-        speakerBtn.style.cursor = "pointer";
-        speakerBtn.style.marginRight = "6px";
-        speakerBtn.style.padding = "0";
-        speakerBtn.style.fontSize = "1em";
-
-        speakerBtn.addEventListener("click", () => {
-          const utterance = new SpeechSynthesisUtterance(text);
-          utterance.lang = "en-GB";
-          speechSynthesis.speak(utterance);
-        });
-
-        const labelSpan = document.createElement("strong");
-        labelSpan.textContent = "Magistus:";
-
-        const headerDiv = document.createElement("div");
-        headerDiv.style.display = "flex";
-        headerDiv.style.alignItems = "center";
-        headerDiv.appendChild(speakerBtn);
-        headerDiv.appendChild(labelSpan);
-
-        div.appendChild(headerDiv);
-        div.innerHTML += `<br>${formatted}`;
-      }
-
-      chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
-      return div;
-    }
-
-    function appendAgentThoughts(agentThoughts) {
-      const reasoningEnabled = JSON.parse(localStorage.getItem("reasoning_enabled") || "true");
-      if (!reasoningEnabled || !agentThoughts || agentThoughts.length === 0) return;
-
-      const container = document.createElement('div');
-      container.className = 'agent-box';
-
-      const header = document.createElement('div');
-      header.className = 'collapsible-header';
-      header.innerHTML = `🧠 Agent Reasoning Breakdown <span class="collapsible-arrow">▶</span>`;
-      container.appendChild(header);
-
-      const content = document.createElement('div');
-      content.className = 'collapsible-content';
-
-      agentThoughts.forEach(agent => {
-        const agentBlock = document.createElement('div');
-
-        const agentLabel = agent.agent_name.includes("meta") ? "(🔁 Meta)" :
-                          agent.agent_name.includes("goal") ? "(🎯 Goal)" : "";
-
-        let extraFields = "";
-
-        if (agent.agent_name.includes("meta")) {
-          extraFields += agent.insight ? `<p><strong>Insight:</strong> ${agent.insight}</p>` : "";
-          extraFields += agent.behavioral_adjustment ? `<p><strong>Behavioral Adjustment:</strong> ${agent.behavioral_adjustment}</p>` : "";
-          extraFields += agent.reflective_summary ? `<p><strong>Reflective Summary:</strong> ${agent.reflective_summary}</p>` : "";
-          extraFields += agent.meta_reflection ? `<p><strong>Meta Reflection:</strong> ${agent.meta_reflection}</p>` : "";
-          extraFields += agent.tags ? `<p><strong>Tags:</strong> ${agent.tags.join(", ")}</p>` : "";
-        }
-
-        if (agent.agent_name.includes("goal") && agent.goals && agent.goals.length > 0) {
-          extraFields += `<p><strong>Goals:</strong></p><ul>${agent.goals.map(g => `<li>${g}</li>`).join('')}</ul>`;
-        }
-
-        agentBlock.innerHTML = `
-          <p><strong>${agent.agent_name} ${agentLabel}</strong> | Confidence: ${agent.confidence}</p>
-          <p><em>${agent.content}</em></p>
-          <p class="flags">Flags: ${JSON.stringify(agent.flags)}</p>
-          <p>Top Reasons:</p>
-          <ul>
-            ${agent.reasons.map(r => `<li>${r}</li>`).join('')}
-          </ul>
-          ${extraFields}
-        `;
-        content.appendChild(agentBlock);
-      });
-
-      container.appendChild(content);
-      chat.appendChild(container);
-      chat.scrollTop = chat.scrollHeight;
-
-      header.addEventListener('click', () => {
-        const isVisible = content.style.display === 'block';
-        content.style.display = isVisible ? 'none' : 'block';
-        header.querySelector('.collapsible-arrow').textContent = isVisible ? '▶' : '▼';
-      });
-    }
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const text = input.value.trim();
-      if (!text) return;
-      appendMessage(text, 'user');
-      input.value = '';
-      const loadingDiv = appendMessage('.', 'ai');
-      let dots = 1;
-      const loadingInterval = setInterval(() => {
-        dots = (dots % 3) + 1;
-        loadingDiv.textContent = 'Magistus: ' + '.'.repeat(dots);
-      }, 500);
-
-      try {
-        const response = await fetch('http://127.0.0.1:8000/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ input: text, reasoning_enabled: reasoningEnabled })
-        });
-        clearInterval(loadingInterval);
-        const data = await response.json();
-        loadingDiv.textContent = 'Magistus: ' + data.response;
-
-        if (data.voice_output && ttsEnabled && 'speechSynthesis' in window) {
-          const utterance = new SpeechSynthesisUtterance(data.response);
-          utterance.lang = 'en-GB';
-          speechSynthesis.cancel();
-          speechSynthesis.speak(utterance);
-        }
-
-        if (data.agent_thoughts) {
-          appendAgentThoughts(data.agent_thoughts);
-        }
-      } catch (err) {
-        clearInterval(loadingInterval);
-        loadingDiv.textContent = 'Magistus: [Error receiving response]';
-        console.error(err);
-      }
-    });
-
-    // Live streaming transcript (bottom micBtn)
-    const micBtn = document.getElementById("micBtn");
-
-    if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      recognition.lang = "en-GB";
-      recognition.interimResults = true;
-      recognition.continuous = false;
-
-      let finalTranscript = "";
-
-      recognition.onstart = () => {
-        micBtn.textContent = "🛑";
-        transcriptDiv.style.display = "block";
-        transcriptDiv.innerText = "[Listening...]";
-      };
-
-      recognition.onresult = (event) => {
-        let interim = "";
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript;
-          } else {
-            interim += transcript;
-          }
-        }
-        transcriptDiv.innerText = finalTranscript + " " + interim;
-      };
-
-      recognition.onerror = () => {
-        micBtn.textContent = "🎙️";
-        transcriptDiv.style.display = "none";
-      };
-
-      recognition.onend = () => {
-        micBtn.textContent = "🎙️";
-        transcriptDiv.style.display = "none";
-        if (finalTranscript.trim()) {
-          input.value = finalTranscript.trim();
-          form.dispatchEvent(new Event("submit"));
-        }
-        finalTranscript = "";
-      };
-
-      micBtn.addEventListener("click", () => {
-        if (micBtn.textContent === "🎙️") {
-          recognition.start();
-        } else {
-          recognition.stop();
-        }
-      });
+  // — Text-to-speech helper —
+  function speak(text) {
+    if (!ttsEnabled || !text) return;
+    const trySpeak = () => {
+      const voices = speechSynthesis.getVoices();
+      const utter  = new SpeechSynthesisUtterance(text);
+      utter.lang   = 'en-GB';
+      const pref   = voices.find(v =>
+        v.name.includes("Microsoft Libby") ||
+        v.name.includes("Google UK English Female")
+      );
+      if (pref) utter.voice = pref;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utter);
+    };
+    if (speechSynthesis.getVoices().length === 0) {
+      speechSynthesis.onvoiceschanged = trySpeak;
     } else {
-      micBtn.disabled = true;
-      micBtn.title = "Speech recognition not supported in this browser";
+      trySpeak();
     }
-  </script>
+  }
+
+  // — Append chat messages (user & AI) with animations —
+  function appendMessage(text, sender) {
+    const div = document.createElement('div');
+    div.className = `msg ${sender}`;
+    // simple Markdown → HTML
+    let formatted = text
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/\n/g, '<br>');
+    if (sender === 'user') {
+      div.innerHTML = `<strong>You:</strong><br>${formatted}`;
+    } else {
+      const header = document.createElement('div');
+      header.className = 'msg-header';
+      const speakerBtn = document.createElement('button');
+      speakerBtn.className = 'speaker-btn';
+      speakerBtn.setAttribute('aria-label','Speak this message');
+      speakerBtn.innerText = '🔈';
+      speakerBtn.addEventListener('click', () => speak(text));
+      const label = document.createElement('strong');
+      label.innerText = 'Magistus:';
+      header.append(speakerBtn, label);
+      div.appendChild(header);
+      div.innerHTML += `<br>${formatted}`;
+    }
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+    return div;
+  }
+
+  // — Append agent reasoning breakdown (collapsible panels) —
+  function appendAgentThoughts(thoughts) {
+    if (!reasoningEnabled || !thoughts?.length) return;
+
+    const container = document.createElement('div');
+    container.className = 'agent-box';
+
+    const header = document.createElement('div');
+    header.className = 'collapsible-header';
+    header.innerHTML = `🧠 Agent Reasoning Breakdown <span class="collapsible-arrow">▶</span>`;
+
+    const content = document.createElement('div');
+    content.className = 'collapsible-content';
+
+    thoughts.forEach(agent => {
+      const block = document.createElement('div');
+      const reasonsList = agent.reasons.map(r => `<li>${r}</li>`).join('');
+      block.innerHTML = `
+        <p><strong>${agent.agent_name}</strong> | Confidence: ${agent.confidence}</p>
+        <p><em>${agent.content}</em></p>
+        <p class="flags">Flags: ${JSON.stringify(agent.flags)}</p>
+        <p>Top Reasons:</p>
+        <ul>${reasonsList}</ul>
+      `;
+      content.appendChild(block);
+    });
+
+    container.append(header, content);
+    chat.appendChild(container);
+    chat.scrollTop = chat.scrollHeight;
+
+    // Ensure collapsible behavior is working
+    header.addEventListener('click', () => {
+      content.classList.toggle('expanded');
+      header.querySelector('.collapsible-arrow').textContent =
+        content.classList.contains('expanded') ? '▼' : '▶';
+      // Add smooth transition for the collapsible content
+      content.style.transition = 'max-height 0.4s ease-out';
+      if (content.classList.contains('expanded')) {
+        content.style.maxHeight = content.scrollHeight + 'px'; // Expand to fit content
+      } else {
+        content.style.maxHeight = '0'; // Collapse it back
+      }
+    });
+  }
+
+  // Form submit event calls appendAgentThoughts(data.agent_thoughts)
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    appendMessage(text, 'user');
+    input.value = '';
+    const loading = appendMessage('...', 'ai');
+    let dots = 1;
+    const loader = setInterval(() => {
+      loading.innerText = 'Magistus: ' + '.'.repeat(dots);
+      dots = (dots % 3) + 1;
+    }, 500);
+    try {
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          input: text,
+          reasoning_enabled: reasoningEnabled,
+          self_eval_enabled: selfEvalEnabled
+        })
+      });
+      clearInterval(loader);
+      const data = await res.json();
+      loading.innerHTML = `Magistus:<br>${data.response.replace(/\n/g,'<br>')}`;
+      if (data.voice_output) speak(data.response);
+      if (data.agent_thoughts) appendAgentThoughts(data.agent_thoughts);
+    } catch (err) {
+      clearInterval(loader);
+      loading.innerHTML = 'Magistus: [Error receiving response]';
+      console.error(err);
+    }
+  });
+
+  // — Speech recognition for live input —
+  if ("SpeechRecognition" in window || "webkitSpeechRecognition" in window) {
+    const SR   = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recog = new SR();
+    recog.lang          = "en-GB";
+    recog.interimResults= true;
+    recog.continuous    = false;
+    let finalText       = "";
+    recog.onstart = () => {
+      micBtn.innerText = "🛑";
+      transcriptDiv.classList.remove('visually-hidden');
+      transcriptDiv.innerText = "[Listening...]";
+    };
+    recog.onresult = e => {
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalText += t;
+        else interim += t;
+      }
+      transcriptDiv.innerText = finalText + interim;
+    };
+    recog.onerror = () => {
+      micBtn.innerText = "🎙️";
+      transcriptDiv.classList.add('visually-hidden');
+    };
+    recog.onend = () => {
+      micBtn.innerText = "🎙️";
+      transcriptDiv.classList.add('visually-hidden');
+      if (finalText.trim()) {
+        input.value = finalText.trim();
+        form.dispatchEvent(new Event('submit'));
+      }
+      finalText = "";
+    };
+    micBtn.addEventListener('click', () => {
+      if (micBtn.innerText === "🎙️") recog.start();
+      else recog.stop();
+    });
+  } else {
+    micBtn.disabled = true;
+    micBtn.title = "Speech recognition not supported";
+  }
+
+  // — Submit on Enter, allow line break on Shift+Enter —
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      form.dispatchEvent(new Event('submit'));
+    }
+  });
+</script>
 </body>
-</html>
+

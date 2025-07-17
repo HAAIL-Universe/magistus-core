@@ -1,5 +1,5 @@
 import importlib
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict, Any
 
 from config_loader import load_config
 from context_types import ContextBundle, AgentThought
@@ -14,14 +14,18 @@ from meta_learning.meta_learning_supervisor import MetaLearningSupervisor
 from meta_learning.utils import append_memory_entry_to_store
 from uuid import uuid4
 from meta_learning.memory_index_entry import MemoryIndexEntry
+from agents.statistical_reasoning_agent import StatisticalReasoningAgent
+from agents.predictive_memory_manager import PredictiveMemoryManager
 
 def run_agents(context: ContextBundle, prior_thoughts: Optional[List[AgentThought]] = None) -> List[AgentThought]:
+    # Fetch the config from the context, which should already have enabled_agents defined
     config = context.config
-    enabled_agents = config.get("agents_enabled", [])
+    enabled_agents = config.get("agents_enabled", [])  # Get the enabled agents directly from the config
     debug_mode = config.get("debug_mode", False)
 
     thoughts: List[AgentThought] = []
 
+    # Iterate through the enabled agents and run each one
     for agent_name in enabled_agents:
         try:
             agent_module = importlib.import_module(f"agents.{agent_name}")
@@ -44,7 +48,6 @@ def detect_contradictions(thoughts: List[AgentThought]) -> List[str]:
                 contradictions.append(f"⚠️ {a.agent_name} vs {b.agent_name} — conflicting views")
     return contradictions
 
-
 def fuse_agent_thoughts(round1: List[AgentThought], round2: List[AgentThought]) -> Tuple[str, str, List[AgentThought]]:
     best = max(round2, key=lambda t: t.confidence)
 
@@ -64,9 +67,12 @@ def fuse_agent_thoughts(round1: List[AgentThought], round2: List[AgentThought]) 
     return best.content.strip(), debug_notes.strip(), round2
 
 
-def run_magistus(user_input: str) -> Tuple[ContextBundle, List[AgentThought], str, str, Optional[MemoryIndexEntry]]:
+def run_magistus(
+    user_input: str,
+    allow_self_eval: bool = False
+) -> Tuple[ContextBundle, List[AgentThought], str, str, Optional[MemoryIndexEntry]]:
 
-
+    # Load the config which contains 'enabled_agents'
     config = load_config()
     compass = EthicalCompass()
     profile = UserProfile()
@@ -93,7 +99,12 @@ def run_magistus(user_input: str) -> Tuple[ContextBundle, List[AgentThought], st
         "goal_tracker": goal_tracker
     }
 
-    round1_thoughts = run_agents(context)
+    # Create the StatisticalReasoningAgent and PredictiveMemoryManager
+    stat_agent = StatisticalReasoningAgent(historical_data=[1, 2, 3, 4, 5])  # Example data
+    memory_manager = PredictiveMemoryManager()
+
+    # Initialize reasoning pipeline with the newly created agents
+    round1_thoughts = run_agents(context)  # No need to pass enabled_agents anymore
     round2_thoughts = run_agents(context, prior_thoughts=round1_thoughts)
 
     fused_summary, debug_metadata, final_thoughts = fuse_agent_thoughts(round1_thoughts, round2_thoughts)
