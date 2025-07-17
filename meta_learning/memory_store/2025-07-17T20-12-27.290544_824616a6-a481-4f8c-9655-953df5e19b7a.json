@@ -1,0 +1,16 @@
+{
+  "id": "824616a6-a481-4f8c-9655-953df5e19b7a",
+  "timestamp": "2025-07-17T20:12:27.290544",
+  "type": "narrative",
+  "content": "\u26a0\ufe0f Potential misalignment(s) detected:\n[anterior_cingulate] flagged contradictory or unclear logic.",
+  "tags": [
+    "reflection",
+    "ethics",
+    "monitor"
+  ],
+  "context": "Reflective Self Monitor analysis of prior agent cycle.",
+  "insight": "\u26a0\ufe0f Potential misalignment(s) detected:\n[anterior_cingulate] flagged contradictory or unclear logic.",
+  "behavioral_adjustment": "Behavioral tuning recommended based on current cycle trends.",
+  "reflective_summary": null,
+  "relevance_score": 0.75
+}
