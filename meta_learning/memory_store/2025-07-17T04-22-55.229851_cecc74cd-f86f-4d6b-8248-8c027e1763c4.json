@@ -1,0 +1,16 @@
+{
+  "id": "cecc74cd-f86f-4d6b-8248-8c027e1763c4",
+  "timestamp": "2025-07-17T04:22:55.229851",
+  "type": "narrative",
+  "content": "\u26a0\ufe0f Potential misalignment(s) detected:\n[prefrontal_cortex] gave advice that may reduce user agency.\n[prefrontal_cortex] gave advice that may reduce user agency.\n[default_mode_network] gave advice that may reduce user agency.\n[default_mode_network] gave advice that may reduce user agency.\n[anterior_cingulate] flagged contradictory or unclear logic.",
+  "tags": [
+    "reflection",
+    "ethics",
+    "monitor"
+  ],
+  "context": "Reflective Self Monitor analysis of prior agent cycle.",
+  "insight": "\u26a0\ufe0f Potential misalignment(s) detected:\n[prefrontal_cortex] gave advice that may reduce user agency.\n[prefrontal_cortex] gave advice that may reduce user agency.\n[default_mode_network] gave advice that may reduce user agency.\n[default_mode_network] gave advice that may reduce user agency.\n[anterior_cingulate] flagged contradictory or unclear logic.",
+  "behavioral_adjustment": "Behavioral tuning recommended based on current cycle trends.",
+  "reflective_summary": null,
+  "relevance_score": 0.75
+}

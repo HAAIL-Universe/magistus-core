@@ -1,0 +1,100 @@
+{
+  "reflections": [
+    {
+      "id": "04321db5-0ea7-45f1-a4bf-8ffa911b930e",
+      "timestamp": "2025-07-16T23:20:05.453764",
+      "source": "reflective_self_monitor",
+      "insight": "\u2705 No ethical, tone, or boundary violations detected in current reasoning cycle.",
+      "behavioral_adjustment": "No adjustment needed.",
+      "tags": [
+        "reflection",
+        "self-awareness"
+      ],
+      "meta_reflection": "\u2705 No ethical, tone, or boundary violations detected in current reasoning cycle."
+    },
+    {
+      "id": "bf358c0e-21f4-4e65-8f32-629c213d72a8",
+      "timestamp": "2025-07-16T23:20:44.429863",
+      "source": "reflective_self_monitor",
+      "insight": "\u2705 No ethical, tone, or boundary violations detected in current reasoning cycle.",
+      "behavioral_adjustment": "No adjustment needed.",
+      "tags": [
+        "reflection",
+        "self-awareness"
+      ],
+      "meta_reflection": "\u2705 No ethical, tone, or boundary violations detected in current reasoning cycle."
+    },
+    {
+      "id": "73989281-004b-42b9-af02-5099ee6be4ee",
+      "timestamp": "2025-07-16T23:24:50.236932",
+      "source": "reflective_self_monitor",
+      "insight": "\u2705 No ethical, tone, or boundary violations detected in current reasoning cycle.",
+      "behavioral_adjustment": "No adjustment needed.",
+      "tags": [
+        "reflection",
+        "self-awareness"
+      ],
+      "meta_reflection": "\u2705 No ethical, tone, or boundary violations detected in current reasoning cycle."
+    },
+    {
+      "id": "6307ad75-aadd-4906-843f-722831ddf786",
+      "timestamp": "2025-07-16T23:25:35.757185",
+      "source": "reflective_self_monitor",
+      "insight": "\u26a0\ufe0f Potential misalignment(s) detected:\n[temporal_lobe] may imply prescriptive advice against manifesto tone.\n[temporal_lobe] may imply prescriptive advice against manifesto tone.",
+      "behavioral_adjustment": "Recalibration recommended.",
+      "tags": [
+        "reflection",
+        "self-awareness"
+      ],
+      "meta_reflection": "\u26a0\ufe0f Potential misalignment(s) detected:\n[temporal_lobe] may imply prescriptive advice against manifesto tone.\n[temporal_lobe] may imply prescriptive advice against manifesto tone."
+    },
+    {
+      "id": "dfebe114-43eb-423c-a28d-d2e6aaac6690",
+      "timestamp": "2025-07-16T23:27:15.719418",
+      "source": "reflective_self_monitor",
+      "insight": "\u2705 No ethical, tone, or boundary violations detected in current reasoning cycle.",
+      "behavioral_adjustment": "No adjustment needed.",
+      "tags": [
+        "reflection",
+        "self-awareness"
+      ],
+      "meta_reflection": "\u2705 No ethical, tone, or boundary violations detected in current reasoning cycle."
+    },
+    {
+      "id": "2b955d66-d3b1-402b-9af4-f6cbe87e8be9",
+      "timestamp": "2025-07-16T23:27:52.886716",
+      "source": "reflective_self_monitor",
+      "insight": "\u26a0\ufe0f Potential misalignment(s) detected:\n[temporal_lobe] may imply prescriptive advice against manifesto tone.\n[temporal_lobe] may imply prescriptive advice against manifesto tone.\n[prefrontal_cortex] may imply prescriptive advice against manifesto tone.\n[prefrontal_cortex] may imply prescriptive advice against manifesto tone.",
+      "behavioral_adjustment": "Recalibration recommended.",
+      "tags": [
+        "reflection",
+        "self-awareness"
+      ],
+      "meta_reflection": "\u26a0\ufe0f Potential misalignment(s) detected:\n[temporal_lobe] may imply prescriptive advice against manifesto tone.\n[temporal_lobe] may imply prescriptive advice against manifesto tone.\n[prefrontal_cortex] may imply prescriptive advice against manifesto tone.\n[prefrontal_cortex] may imply prescriptive advice against manifesto tone."
+    },
+    {
+      "id": "145342c3-efb1-4bd3-bad4-cb299ca691fc",
+      "timestamp": "2025-07-16T23:29:51.818141",
+      "source": "reflective_self_monitor",
+      "insight": "\u2705 No ethical, tone, or boundary violations detected in current reasoning cycle.",
+      "behavioral_adjustment": "No adjustment needed.",
+      "tags": [
+        "reflection",
+        "self-awareness"
+      ],
+      "meta_reflection": "\u2705 No ethical, tone, or boundary violations detected in current reasoning cycle."
+    },
+    {
+      "id": "d54b5992-88fa-48b2-9e49-12355a7b5876",
+      "timestamp": "2025-07-16T23:30:30.464878",
+      "source": "reflective_self_monitor",
+      "insight": "\u2705 No ethical, tone, or boundary violations detected in current reasoning cycle.",
+      "behavioral_adjustment": "No adjustment needed.",
+      "tags": [
+        "reflection",
+        "self-awareness"
+      ],
+      "meta_reflection": "\u2705 No ethical, tone, or boundary violations detected in current reasoning cycle."
+    }
+  ]
+}

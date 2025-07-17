@@ -1,0 +1,9 @@
+langchain-core
+langchain-openai
+langchain-community
+openai
+faiss-cpu
+python-dotenv
+fastapi
+uvicorn
+edge-tts

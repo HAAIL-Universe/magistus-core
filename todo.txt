@@ -1,0 +1,53 @@
+⚠️ Remaining / Enhancement Opportunities
+User Profile & Persona Modeling
+
+UserProfile and PersonaCore are present as modules but don’t yet build a persistent user persona.
+
+✅ Next step: start storing user traits, tone preferences, recurring themes, etc. in a new user_profile.json file.
+
+Magistus Self-Modeling
+
+The new magistus_profile.json should allow Magistus to build an evolving understanding of itself:
+
+Strengths, limits, boundaries crossed
+
+System upgrades or feature flags
+
+Its "philosophy" or personality
+
+GoalTracker Expansion
+
+Currently passive. Add:
+
+Goal memory in JSON
+
+Detection of goal-setting phrases like:
+
+“I want to…”
+
+“Let’s aim for…”
+
+“My objective is…”
+
+“Magistus, help me plan…”
+
+Store in goal_log.json or magistus_profile.json["goals"]
+
+Memory Introspection Agent (Coming Phase)
+
+New agent: memory_archivist.py
+
+Detects forgotten details
+
+Flags patterns (e.g., recurring emotion, names, places)
+
+Could suggest insights like:
+
+“You've asked about your purpose 3 times in the last week. Would you like to reflect on that?”
+
+Whisper Mode™
+
+Long-term: Bluetooth whisper via voice+subvocalization
+
+Short-term: prepare local Whisper STT capture endpoint
+

@@ -1,0 +1,10 @@
+UPGRADE: Magistus v1 + Streaming Output
+
+✓ Updated llm_wrapper.py to expose stream_response(prompt)
+✓ Added /chat_stream endpoint to launch_v1.py
+✓ Endpoint streams fused_output token-by-token via yield
+✓ Tested with Powershell and confirmed streaming functionality
+✓ Future option: stream fused agent fusion in real-time
+✓ Does not replace existing /chat endpoint — works alongside
+✓ Verified access on same-network mobile browser via local IP
+✓ Voice output toggle available in config.yaml

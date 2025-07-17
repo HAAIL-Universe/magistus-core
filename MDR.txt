@@ -1,0 +1,20 @@
+🧠 Magistus Design Relay — Self-Evolution Protocol
+Pick a module to evolve (e.g. temporal_lobe.py, prefrontal_cortex.py)
+
+Send a reflection prompt to Magistus:
+
+Ask him to evaluate the code based on Trinity principles, cognitive alignment, and functional goals.
+
+Wait for his analysis — usually a philosophical justification.
+
+Prompt him again to complete the loop:
+
+"Now generate a BuilderGPT-style prompt to reconstruct the file, and include the original code."
+
+Paste the original code below his Builder prompt.
+
+Send full bundle to GPT Builder
+
+Audit the result with Assistant
+
+Replace the old file with the upgraded, Magistus-tailored version.

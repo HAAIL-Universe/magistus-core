@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Magistus Trinity UI — TEST UPDATE</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    /* === Time-of-Day Theme Variables === */
+    :root {
+      --bg-morning: radial-gradient(circle, #f5f7fa, #c3cfe2);
+      --bg-afternoon: radial-gradient(circle, #e0eafc, #cfdef3);
+      --bg-evening: radial-gradient(circle, #2c3e50, #4ca1af);
+      --bg-night: radial-gradient(circle, #0a0a0a, #0e0e0e);
+      --agent-default: #00ffbf;
+      --agent-temporal: #42a5f5;
+      --agent-ethical: #90ee90;
+      --agent-reflective: #ffd54f;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+      transition: background 0.4s ease, color 0.4s ease, box-shadow 0.3s ease;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-night);
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    header {
+      background: linear-gradient(to right, #00c6ff, #0072ff);
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.8rem;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #chat {
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
+      font-size: 1.1rem;
+      scroll-behavior: smooth;
+    }
+
+    .speaker-btn:hover {
+      opacity: 0.8;
+      transform: scale(1.05);
+      transition: all 0.2s ease-in-out;
+    }
+
+    .msg {
+      margin-bottom: 1rem;
+      padding: 0.85rem 1.2rem;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      box-shadow: 0 0 16px rgba(0, 255, 255, 0.12);
+      backdrop-filter: blur(5px);
+      transition: transform 0.2s ease;
+    }
+
+    .msg:hover {
+      transform: translateY(-2px);
+    }
+
+    .user {
+      color: var(--agent-temporal);
+      border-left: 4px solid var(--agent-temporal);
+    }
+
+    .ai {
+      color: var(--agent-ethical);
+      border-left: 4px solid var(--agent-ethical);
+    }
+
+    .agent-box {
+      margin-top: 1.5rem;
+      border: 1px solid var(--agent-default);
+      border-radius: 12px;
+      box-shadow: 0 0 24px var(--agent-default);
+      animation: fadeIn 0.5s ease-in-out;
+      background: rgba(35, 35, 35, 0.93);
+    }
+
+    .agent-temporal {
+      border-color: var(--agent-temporal);
+      box-shadow: 0 0 20px var(--agent-temporal);
+    }
+
+    .agent-ethical {
+      border-color: var(--agent-ethical);
+      box-shadow: 0 0 20px var(--agent-ethical);
+    }
+
+    .agent-reflective {
+      border-color: var(--agent-reflective);
+      box-shadow: 0 0 20px var(--agent-reflective);
+    }
+
+    .collapsible-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      padding: 1rem;
+      color: #00ffe0;
+      font-size: 1.3rem;
+      font-weight: bold;
+      border-bottom: 1px solid #00ffe0;
+      user-select: none;
+    }
+
+    .collapsible-arrow {
+      font-size: 1.3rem;
+      transition: transform 0.3s ease;
+    }
+
+    .collapsible-header:hover .collapsible-arrow {
+      transform: rotate(90deg);
+    }
+
+    .collapsible-content {
+      display: none;
+      padding: 0 1rem 1rem 1rem;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .agent-box p {
+      margin: 0.3rem 0;
+    }
+
+    .agent-box ul {
+      margin-top: 0.2rem;
+      padding-left: 1.2rem;
+    }
+
+    .flags {
+      color: #ffcc80;
+      font-size: 0.9rem;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+
+    form {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem;
+      background: #1a1a1a;
+      border-top: 1px solid #333;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 1.1rem;
+      background: #222;
+      color: #fff;
+      outline: none;
+      transition: box-shadow 0.2s ease;
+    }
+
+    input[type="text"]:focus {
+      box-shadow: 0 0 6px #00c6ffaa;
+    }
+
+    button {
+      padding: 0.75rem 1rem;
+      background: linear-gradient(to right, #00c6ff, #0072ff);
+      border: none;
+      color: white;
+      font-size: 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 10px #00c6ffaa;
+    }
+
+    button:hover {
+      background: linear-gradient(to right, #00ffd5, #00aaff);
+      box-shadow: 0 0 16px #00fff7cc;
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <span>🌐 Magistus AGI</span>
+    <div>
+      <button id="toggleReasoning">🧠 Reasoning: ON</button>
+
+      <button id="ttsToggle">🔈</button>
+    </div>
+  </header>
+
+  <div id="chat"></div>
+  <div id="liveTranscript" style="display: none; font-style: italic; color: #aaa; padding: 0 1rem;"></div>
+
+  <form id="chatForm">
+    <input type="text" id="userInput" placeholder="Type your message..." autocomplete="off" />
+    <button type="button" id="micBtn">🎙️</button>
+    <button type="submit">Send</button>
+  </form>
+
+  <script>
+    const chat = document.getElementById('chat');
+    const form = document.getElementById('chatForm');
+    const input = document.getElementById('userInput');
+    const ttsToggle = document.getElementById('ttsToggle');
+    const toggleBtn = document.getElementById("toggleReasoning");
+    const transcriptDiv = document.getElementById("liveTranscript");
+
+    function speak(text) {
+      if (!ttsEnabled || !text) return;
+
+      const trySpeak = () => {
+        const voices = speechSynthesis.getVoices();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-GB';
+
+        const preferredVoice = voices.find(v =>
+          v.name.includes("Microsoft Libby") || v.name.includes("Google UK English Female")
+        );
+
+        if (preferredVoice) {
+          utterance.voice = preferredVoice;
+          console.log("✅ Using voice:", preferredVoice.name);
+        } else {
+          console.warn("⚠️ Preferred voice not found, using default.");
+        }
+
+        speechSynthesis.cancel();
+        speechSynthesis.speak(utterance);
+      };
+
+      // Retry if voices aren't loaded yet
+      if (speechSynthesis.getVoices().length === 0) {
+        speechSynthesis.onvoiceschanged = trySpeak;
+      } else {
+        trySpeak();
+      }
+    }
+
+    let reasoningEnabled = JSON.parse(localStorage.getItem("reasoning_enabled") || "true");
+    let ttsEnabled = true;
+
+    function updateToggleLabel() {
+      toggleBtn.textContent = reasoningEnabled ? "🧠 Reasoning: ON" : "💬 Reasoning: OFF";
+      ttsToggle.textContent = ttsEnabled ? "🔈" : "🔇";
+    }
+    updateToggleLabel();
+
+    toggleBtn.addEventListener("click", () => {
+      reasoningEnabled = !reasoningEnabled;
+      localStorage.setItem("reasoning_enabled", JSON.stringify(reasoningEnabled));
+      updateToggleLabel();
+    });
+
+    ttsToggle.addEventListener("click", () => {
+      ttsEnabled = !ttsEnabled;
+      updateToggleLabel();
+      if (!ttsEnabled && 'speechSynthesis' in window) {
+        speechSynthesis.cancel(); // 🔇 stop mid-sentence
+      }
+    });
+
+
+    function appendMessage(text, sender) {
+      const div = document.createElement('div');
+      div.className = 'msg ' + sender;
+
+      let formatted = text
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+        .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/\n/g, '<br>');
+
+      if (sender === 'user') {
+        div.innerHTML = `<strong>You:</strong><br>${formatted}`;
+      } else {
+        // Speaker button
+        const speakerBtn = document.createElement("button");
+        speakerBtn.textContent = "🔈";
+        speakerBtn.className = "speaker-btn";
+        speakerBtn.style.border = "none";
+        speakerBtn.style.background = "transparent";
+        speakerBtn.style.cursor = "pointer";
+        speakerBtn.style.marginRight = "6px";
+        speakerBtn.style.padding = "0";
+        speakerBtn.style.fontSize = "1em";
+
+        speakerBtn.addEventListener("click", () => {
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = "en-GB";
+          speechSynthesis.speak(utterance);
+        });
+
+        const labelSpan = document.createElement("strong");
+        labelSpan.textContent = "Magistus:";
+
+        const headerDiv = document.createElement("div");
+        headerDiv.style.display = "flex";
+        headerDiv.style.alignItems = "center";
+        headerDiv.appendChild(speakerBtn);
+        headerDiv.appendChild(labelSpan);
+
+        div.appendChild(headerDiv);
+        div.innerHTML += `<br>${formatted}`;
+      }
+
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+      return div;
+    }
+
+    function appendAgentThoughts(agentThoughts) {
+      const reasoningEnabled = JSON.parse(localStorage.getItem("reasoning_enabled") || "true");
+      if (!reasoningEnabled || !agentThoughts || agentThoughts.length === 0) return;
+
+      const container = document.createElement('div');
+      container.className = 'agent-box';
+
+      const header = document.createElement('div');
+      header.className = 'collapsible-header';
+      header.innerHTML = `🧠 Agent Reasoning Breakdown <span class="collapsible-arrow">▶</span>`;
+      container.appendChild(header);
+
+      const content = document.createElement('div');
+      content.className = 'collapsible-content';
+
+      agentThoughts.forEach(agent => {
+        const agentBlock = document.createElement('div');
+
+        const agentLabel = agent.agent_name.includes("meta") ? "(🔁 Meta)" :
+                          agent.agent_name.includes("goal") ? "(🎯 Goal)" : "";
+
+        let extraFields = "";
+
+        if (agent.agent_name.includes("meta")) {
+          extraFields += agent.insight ? `<p><strong>Insight:</strong> ${agent.insight}</p>` : "";
+          extraFields += agent.behavioral_adjustment ? `<p><strong>Behavioral Adjustment:</strong> ${agent.behavioral_adjustment}</p>` : "";
+          extraFields += agent.reflective_summary ? `<p><strong>Reflective Summary:</strong> ${agent.reflective_summary}</p>` : "";
+          extraFields += agent.meta_reflection ? `<p><strong>Meta Reflection:</strong> ${agent.meta_reflection}</p>` : "";
+          extraFields += agent.tags ? `<p><strong>Tags:</strong> ${agent.tags.join(", ")}</p>` : "";
+        }
+
+        if (agent.agent_name.includes("goal") && agent.goals && agent.goals.length > 0) {
+          extraFields += `<p><strong>Goals:</strong></p><ul>${agent.goals.map(g => `<li>${g}</li>`).join('')}</ul>`;
+        }
+
+        agentBlock.innerHTML = `
+          <p><strong>${agent.agent_name} ${agentLabel}</strong> | Confidence: ${agent.confidence}</p>
+          <p><em>${agent.content}</em></p>
+          <p class="flags">Flags: ${JSON.stringify(agent.flags)}</p>
+          <p>Top Reasons:</p>
+          <ul>
+            ${agent.reasons.map(r => `<li>${r}</li>`).join('')}
+          </ul>
+          ${extraFields}
+        `;
+        content.appendChild(agentBlock);
+      });
+
+      container.appendChild(content);
+      chat.appendChild(container);
+      chat.scrollTop = chat.scrollHeight;
+
+      header.addEventListener('click', () => {
+        const isVisible = content.style.display === 'block';
+        content.style.display = isVisible ? 'none' : 'block';
+        header.querySelector('.collapsible-arrow').textContent = isVisible ? '▶' : '▼';
+      });
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+      appendMessage(text, 'user');
+      input.value = '';
+      const loadingDiv = appendMessage('.', 'ai');
+      let dots = 1;
+      const loadingInterval = setInterval(() => {
+        dots = (dots % 3) + 1;
+        loadingDiv.textContent = 'Magistus: ' + '.'.repeat(dots);
+      }, 500);
+
+      try {
+        const response = await fetch('http://127.0.0.1:8000/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ input: text, reasoning_enabled: reasoningEnabled })
+        });
+        clearInterval(loadingInterval);
+        const data = await response.json();
+        loadingDiv.textContent = 'Magistus: ' + data.response;
+
+        if (data.voice_output && ttsEnabled && 'speechSynthesis' in window) {
+          const utterance = new SpeechSynthesisUtterance(data.response);
+          utterance.lang = 'en-GB';
+          speechSynthesis.cancel();
+          speechSynthesis.speak(utterance);
+        }
+
+        if (data.agent_thoughts) {
+          appendAgentThoughts(data.agent_thoughts);
+        }
+      } catch (err) {
+        clearInterval(loadingInterval);
+        loadingDiv.textContent = 'Magistus: [Error receiving response]';
+        console.error(err);
+      }
+    });
+
+    // Live streaming transcript (bottom micBtn)
+    const micBtn = document.getElementById("micBtn");
+
+    if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.lang = "en-GB";
+      recognition.interimResults = true;
+      recognition.continuous = false;
+
+      let finalTranscript = "";
+
+      recognition.onstart = () => {
+        micBtn.textContent = "🛑";
+        transcriptDiv.style.display = "block";
+        transcriptDiv.innerText = "[Listening...]";
+      };
+
+      recognition.onresult = (event) => {
+        let interim = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interim += transcript;
+          }
+        }
+        transcriptDiv.innerText = finalTranscript + " " + interim;
+      };
+
+      recognition.onerror = () => {
+        micBtn.textContent = "🎙️";
+        transcriptDiv.style.display = "none";
+      };
+
+      recognition.onend = () => {
+        micBtn.textContent = "🎙️";
+        transcriptDiv.style.display = "none";
+        if (finalTranscript.trim()) {
+          input.value = finalTranscript.trim();
+          form.dispatchEvent(new Event("submit"));
+        }
+        finalTranscript = "";
+      };
+
+      micBtn.addEventListener("click", () => {
+        if (micBtn.textContent === "🎙️") {
+          recognition.start();
+        } else {
+          recognition.stop();
+        }
+      });
+    } else {
+      micBtn.disabled = true;
+      micBtn.title = "Speech recognition not supported in this browser";
+    }
+  </script>
+</body>
+</html>

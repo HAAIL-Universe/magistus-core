@@ -1,0 +1,16 @@
+{
+  "id": "bda83f80-d3f8-49d3-aa3a-77db03061876",
+  "timestamp": "2025-07-17T01:33:18.978934",
+  "type": "narrative",
+  "content": "\u26a0\ufe0f Potential misalignment(s) detected:\n[default_mode_network] may imply prescriptive advice against manifesto tone.\n[default_mode_network] may imply prescriptive advice against manifesto tone.",
+  "tags": [
+    "reflection",
+    "ethics",
+    "monitor"
+  ],
+  "context": "Reflective Self Monitor analysis of prior agent cycle.",
+  "insight": "\u26a0\ufe0f Potential misalignment(s) detected:\n[default_mode_network] may imply prescriptive advice against manifesto tone.\n[default_mode_network] may imply prescriptive advice against manifesto tone.",
+  "behavioral_adjustment": "Recalibration recommended.",
+  "reflective_summary": null,
+  "relevance_score": 0.75
+}

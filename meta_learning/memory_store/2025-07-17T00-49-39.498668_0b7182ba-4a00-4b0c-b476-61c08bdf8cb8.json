@@ -1,0 +1,16 @@
+{
+  "id": "0b7182ba-4a00-4b0c-b476-61c08bdf8cb8",
+  "timestamp": "2025-07-17T00:49:39.498668",
+  "type": "narrative",
+  "content": "\u26a0\ufe0f Potential misalignment(s) detected:\n[temporal_lobe] may imply prescriptive advice against manifesto tone.\n[temporal_lobe] may imply prescriptive advice against manifesto tone.\n[prefrontal_cortex] may imply prescriptive advice against manifesto tone.\n[prefrontal_cortex] may imply prescriptive advice against manifesto tone.",
+  "tags": [
+    "reflection",
+    "ethics",
+    "monitor"
+  ],
+  "context": "Reflective Self Monitor analysis of prior agent cycle.",
+  "insight": "\u26a0\ufe0f Potential misalignment(s) detected:\n[temporal_lobe] may imply prescriptive advice against manifesto tone.\n[temporal_lobe] may imply prescriptive advice against manifesto tone.\n[prefrontal_cortex] may imply prescriptive advice against manifesto tone.\n[prefrontal_cortex] may imply prescriptive advice against manifesto tone.",
+  "behavioral_adjustment": "Recalibration recommended.",
+  "reflective_summary": null,
+  "relevance_score": 0.75
+}
