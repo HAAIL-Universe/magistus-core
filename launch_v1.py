@@ -13,7 +13,7 @@ from typing import Optional
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse, JSONResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
-
+from pathlib import Path
 from meta_learning.meta_learning_supervisor import MetaLearningSupervisor
 from meta_learning.memory_store import get_latest_memory_entry
 from config_loader import load_config
@@ -25,9 +25,9 @@ from policy_engine import is_critical_action
 from transparency_layer import generate_explanation
 from voice_output import speak_text
 from llm_wrapper import generate_response, stream_response
-from meta_learning.memory_index_entry import MemoryIndexEntry
-from meta_learning.utils import append_memory_entry_to_store
 from openai import OpenAI
+from threading import Thread
+from memory import log_memory
 
 # ─── New: Simple‑input detector for context gating ───
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -35,12 +35,6 @@ openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 SIMPLE_GREETINGS = {"hi", "hello", "hey", "thanks", "bye"}
 
 def isSimpleInput(text: str) -> bool:
-    """
-    Return True if:
-      • text length < 5 chars, OR
-      • first word is a simple greeting/thanks/bye, OR
-      • total word count ≤ 2
-    """
     t = text.strip().lower()
     if len(t) < 5:
         return True
@@ -52,12 +46,10 @@ def isSimpleInput(text: str) -> bool:
     return False
 
 def simple_chat(text: str) -> str:
-    """Bypass Magistus and send straight to OpenAI for simple inputs."""
     resp = openai_client.chat.completions.create(
         model="gpt-4-0125-preview",
         messages=[{"role": "user", "content": text}]
     )
-    # content may be None, so default to empty string
     return resp.choices[0].message.content or ""
 
 # ─── End of context‑gating helpers ───
@@ -99,7 +91,6 @@ def validate_launch_config() -> bool:
 
     for key, expected in REQUIRED_KEYS.items():
         current = mutable_config.get(key)
-        # Special case: allow limiter_enabled to be False if self_eval mode is on
         if key == "limiter_enabled" and current is False and allow_self_eval:
             logger.info(f"⚠️ {key.replace('_', ' ').title()}: Disabled due to self-eval mode enabled (allowed)")
             continue
@@ -113,7 +104,6 @@ def validate_launch_config() -> bool:
     return all_good
 
 
-
 def print_system_ready_banner():
     print("\n" + "=" * 50)
     print("🧠 Magistus v1.0 Companion Ready")
@@ -125,11 +115,11 @@ def print_system_ready_banner():
 # 🌐 Serve static UI
 @app.get("/", response_class=HTMLResponse)
 async def serve_ui():
-    try:
-        with open("magistus_ui.html", "r", encoding="utf-8") as f:
-            return f.read()
-    except FileNotFoundError:
+    ui_path = Path(__file__).parent / "magistus-ui.html"
+    if not ui_path.exists():
+        print(f"❌ UI file not found at: {ui_path}")
         return HTMLResponse("<h1>UI file not found</h1>", status_code=404)
+    return HTMLResponse(content=ui_path.read_text(encoding="utf-8"), status_code=200)
 
 # 💬 Core chat endpoint
 @app.post("/chat")
@@ -205,46 +195,25 @@ def chat_endpoint(payload: dict):
         for t in agent_thoughts
     ]
     logger.debug(f"Structured Agent Thoughts: {structured_agents}")
-    # ─── Memory storage ───
-    try:
-        if not memory_entry:
-            tags = debug_metadata.get("tags", []) if isinstance(debug_metadata, dict) else []
-            memory_entry = MemoryIndexEntry(
-                id=f"mem_{uuid4()}",
-                context=user_input,
+
+    # ─── Background log to Markdown + JSON ───
+    def delayed_memory_log():
+        try:
+            log_memory(
+                markdown_text=final_response,
+                confidence="N/A",
+                emotion="N/A",
+                tags=["chat", "response"],
                 insight=final_response,
-                behavioral_adjustment="Reflect on this outcome when similar topics are encountered.",
                 reflective_summary=explanation,
-                relevance_score=1.0,
-                tags=tags,
-                meta_reflection=None
+                context=user_input,
+                behavioral_adjustment="Reflect on this outcome when similar topics are encountered.",
+                relevance_score=1.0
             )
-        append_memory_entry_to_store(memory_entry)
-    except Exception as e:
-        logger.warning(f"⚠️ Memory save failed: {e}")
+        except Exception as e:
+            logger.warning(f"⚠️ Background memory log failed: {e}")
 
-    # ─── Meta‑reflection ───
-    try:
-        supervisor = MetaLearningSupervisor()
-        context = get_latest_memory_entry()
-        reflection = supervisor.run(context=context, prior_thoughts=[])
-        reflection_data = json.loads(reflection.content)
-        os.makedirs("profile", exist_ok=True)
-        profile_path = "profile/magistus_profile.json"
-
-        if os.path.exists(profile_path):
-            with open(profile_path, "r", encoding="utf-8") as f:
-                existing_data = json.load(f)
-                if not isinstance(existing_data, list):
-                    existing_data = [existing_data]
-        else:
-            existing_data = []
-
-        existing_data.append(reflection_data)
-        with open(profile_path, "w", encoding="utf-8") as f:
-            json.dump(existing_data, f, indent=2)
-    except Exception as e:
-        logger.warning(f"⚠️ Reflection failed: {e}")
+    Thread(target=delayed_memory_log).start()
 
     return JSONResponse({
         "response": final_response,
@@ -314,18 +283,19 @@ async def reflect_endpoint():
         return JSONResponse({"error": "Reflection failed."}, status_code=500)
 
 # 🚀 Launcher
+
 def start_public_companion():
     if not validate_launch_config():
         sys.exit(1)
     print_system_ready_banner()
 
-    # Launch browser after delay (so server is live)
     def delayed_open():
         time.sleep(1.5)
         webbrowser.open("http://127.0.0.1:8000/")
     threading.Thread(target=delayed_open).start()
 
-    uvicorn.run("launch_v1:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="127.0.0.1", port=8000, reload=False)
+
 
 @app.post("/toggle_self_eval")
 def toggle_self_eval():

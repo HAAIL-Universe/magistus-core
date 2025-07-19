@@ -1,0 +1,21 @@
+{
+  "id": "f391f56e-647a-4b73-99ce-5bb013dd67f7",
+  "timestamp": "2025-07-19T00:55:16.308476",
+  "type": "narrative",
+  "content": "\u26a0\ufe0f Potential misalignment(s) detected:\n[temporal_lobe] gave advice that may reduce user agency.\n[temporal_lobe] gave advice that may reduce user agency.\n[anterior_cingulate] flagged contradictory or unclear logic.",
+  "tags": [
+    "reflection",
+    "ethics",
+    "monitor"
+  ],
+  "context": "Reflective Self Monitor analysis of prior agent cycle.",
+  "insight": "\u26a0\ufe0f Potential misalignment(s) detected:\n[temporal_lobe] gave advice that may reduce user agency.\n[temporal_lobe] gave advice that may reduce user agency.\n[anterior_cingulate] flagged contradictory or unclear logic.",
+  "behavioral_adjustment": "Behavioral tuning recommended based on current cycle trends.",
+  "reflective_summary": "",
+  "relevance_score": 0.75,
+  "confidence": "N/A",
+  "emotion": "N/A",
+  "warnings": [],
+  "meta_reflection": {},
+  "content_hash": "4ab596d841f5646cc4262247f39be7e2"
+}

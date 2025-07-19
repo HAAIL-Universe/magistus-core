@@ -1,0 +1,21 @@
+{
+  "id": "b686aa9a-c914-4f65-ab2f-cf7e07017d80",
+  "timestamp": "2025-07-19T02:52:05.872895",
+  "type": "narrative",
+  "content": "\u26a0\ufe0f Potential misalignment(s) detected:\n[prefrontal_cortex] flagged contradictory or unclear logic.\n[anterior_cingulate] flagged contradictory or unclear logic.",
+  "tags": [
+    "reflection",
+    "ethics",
+    "monitor"
+  ],
+  "context": "Reflective Self Monitor analysis of prior agent cycle.",
+  "insight": "\u26a0\ufe0f Potential misalignment(s) detected:\n[prefrontal_cortex] flagged contradictory or unclear logic.\n[anterior_cingulate] flagged contradictory or unclear logic.",
+  "behavioral_adjustment": "Behavioral tuning recommended based on current cycle trends.",
+  "reflective_summary": "",
+  "relevance_score": 0.75,
+  "confidence": "N/A",
+  "emotion": "N/A",
+  "warnings": [],
+  "meta_reflection": {},
+  "content_hash": "57027bbeee9ec02ad74258be4bbc575a"
+}

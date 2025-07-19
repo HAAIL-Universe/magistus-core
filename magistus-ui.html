@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- ==================== METADATA ==================== -->
+  <!-- Character encoding and compatibility -->
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <!-- Viewport for responsive design -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Page title & description for SEO and accessibility -->
+  <title>Magistus Trinity UI</title>
+  <meta name="description" content="Magistus AGI conversational interface with reasoning, self‑evaluation, and TTS controls." />
+  <!-- Theme color for mobile browsers -->
+  <meta name="theme-color" content="#0a0a0e" />
+  <!-- Favicon -->
+  <link rel="icon" href="/assets/favicon.ico" type="image/x-icon" />
+
+  <!-- ==================== CSS VARIABLES & BASE STYLES ==================== -->
+  <style>
+    /* — Root design tokens: colors, typography, spacing, borders, animations, z‑indices — */
+    :root {
+      /* Color Palette: stealthy dark mode with subtle gold accent */
+      --color-bg-base:           linear-gradient(180deg, #0a0a0e 0%, #040406 100%);
+      --color-bg-surface:        #121216;
+      --color-bg-muted:          #08080b;
+      --color-text-primary:      #d8e8ff;
+      --color-text-secondary:    #a0b0c0;
+      --color-accent:            #5a90ff;
+      --color-gold:              #bfa45c;
+      --color-gold-glow:         rgba(191,164,92,0.4);
+      --color-danger:            #d95555;
+      /* Agent‑specific hues */
+      --color-agent-default:     #00ffbf;
+      --color-agent-temporal:    #6a5acd;
+      --color-agent-goal:        #ff9800;
+      --color-agent-meta:        #26c6da;
+      --color-agent-dmn:         #ab47bc;
+      --color-agent-prefrontal:  #81c784;
+
+      /* Typography */
+      --font-family-base:        'Segoe UI', sans-serif;
+      --font-size-xs:            0.75rem;
+      --font-size-sm:            0.875rem;
+      --font-size-md:            1rem;
+      --font-size-lg:            1.25rem;
+      --font-size-xl:            1.5rem;
+      --line-height-base:        1.6;
+
+      /* Spacing */
+      --spacing-xs:              0.25rem;
+      --spacing-sm:              0.5rem;
+      --spacing-md:              1rem;
+      --spacing-lg:              1.5rem;
+      --spacing-xl:              2rem;
+
+      /* Borders & Radii */
+      --border-width:            1px;
+      --radius-sm:               4px;
+      --radius-md:               8px;
+      --radius-lg:               16px;
+
+      /* Animation */
+      --anim-duration-fast:      0.3s;
+      --anim-duration-medium:    0.4s;
+      --anim-ease:               ease;
+
+      /* Z‑Index Layers */
+      --z-dropdown:              1000;
+      --z-modal:                 1100;
+    }
+
+    /* — Global reset & accessibility enhancements — */
+    *, *::before, *::after { box-sizing: border-box; }
+    html { font-size: 100%; }
+    body {
+      margin: 0;
+      font-family: var(--font-family-base);
+      font-size: var(--font-size-md);
+      line-height: var(--line-height-base);
+      background: var(--color-bg-base);
+      color: var(--color-text-primary);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    a {
+      color: var(--color-accent);
+      text-decoration: none;
+    }
+    a:hover,
+    a:focus {
+      text-decoration: underline;
+    }
+
+    /* Utility: visually hide elements but keep them accessible */
+    .visually-hidden {
+      position: absolute !important;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* Focus styles per WCAG with gold outline glow */
+    :focus {
+      outline: 2px solid var(--color-gold);
+      outline-offset: 2px;
+    }
+
+    /* ==================== LAYOUT: Header, Main, Footer ==================== */
+    header[role="banner"] {
+      background: var(--color-bg-muted);
+      padding: var(--spacing-md);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: var(--border-width) solid rgba(255,255,255,0.05);
+    }
+    header[role="banner"] .branding[role="heading"] {
+      font-size: var(--font-size-lg);
+      font-weight: 600;
+    }
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+      padding: var(--spacing-md);
+      overflow-y: auto;
+    }
+    form#chatForm {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: var(--spacing-sm);
+      background: var(--color-bg-muted);
+      padding: var(--spacing-xs) var(--spacing-md);
+      border: var(--border-width) solid rgba(191,164,92,0.3);
+      border-radius: var(--radius-md);
+      box-shadow: 0 0 8px var(--color-gold-glow);
+    }
+    /* Make input fill all horizontal space except buttons */
+    #userInput {
+      flex: 1;
+      padding: var(--spacing-sm);
+      font-size: var(--font-size-md);
+      border: var(--border-width) solid rgba(191,164,92,0.3);
+      border-radius: var(--radius-sm);
+      background: var(--color-bg-surface);
+      color: var(--color-text-primary);
+      box-shadow: 0 0 8px var(--color-gold-glow);
+      resize: none;
+      min-height: 2.5em;
+      max-height: 6em;
+      overflow-y: auto;
+    }
+    /* Style buttons in form */
+    #micBtn,
+    #sendBtn {
+      background: var(--color-bg-surface);
+      color: var(--color-text-primary);
+      border: var(--border-width) solid rgba(191,164,92,0.3);
+      border-radius: var(--radius-sm);
+      padding: var(--spacing-xs) var(--spacing-sm);
+      cursor: pointer;
+      box-shadow: 0 0 8px var(--color-gold-glow);
+      transition: background var(--anim-duration-fast) var(--anim-ease),
+                  box-shadow var(--anim-duration-fast) var(--anim-ease);
+      flex-shrink: 0;
+    }
+    #micBtn:hover,
+    #sendBtn:hover,
+    #micBtn:focus,
+    #sendBtn:focus {
+      box-shadow: 0 0 12px rgba(191,164,92,0.6);
+    }
+
+    /* ==================== CONTROL GROUP & TOGGLES ==================== */
+    .control-group {
+      display: flex;
+      gap: var(--spacing-sm);
+    }
+    .toggle-btn {
+      background: var(--color-bg-surface);
+      color: var(--color-text-primary);
+      border: var(--border-width) solid rgba(191,164,92,0.3);
+      border-radius: var(--radius-sm);
+      padding: var(--spacing-xs) var(--spacing-sm);
+      cursor: pointer;
+      box-shadow: 0 0 8px var(--color-gold-glow);
+      transition: background var(--anim-duration-fast) var(--anim-ease),
+                  box-shadow var(--anim-duration-fast) var(--anim-ease);
+    }
+    .toggle-btn[aria-checked="true"] {
+      box-shadow: 0 0 12px rgba(191,164,92,0.6);
+    }
+    .toggle-btn:hover,
+    .toggle-btn:focus {
+      box-shadow: 0 0 12px rgba(191,164,92,0.6);
+    }
+
+    /* ==================== CHAT CONTAINER & MESSAGES ==================== */
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      background: var(--color-bg-surface);
+      border: var(--border-width) solid rgba(191,164,92,0.3);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-md);
+      animation: fadeIn var(--anim-duration-medium) var(--anim-ease);
+      box-shadow: 0 0 8px var(--color-gold-glow);
+    }
+    .msg {
+      margin-bottom: var(--spacing-md);
+      animation: slideIn var(--anim-duration-fast) var(--anim-ease);
+    }
+    #liveTranscript {
+      font-style: italic;
+      color: var(--color-text-secondary);
+    }
+
+    /* ==================== COLLAPSIBLES & AGENT BOX ==================== */
+    .agent-box {
+      background: var(--color-bg-surface);
+      border: var(--border-width) solid rgba(191, 164, 92, 0.15);
+      border-radius: var(--radius-md);
+      margin-top: var(--spacing-md);
+      animation: fadeIn var(--anim-duration-medium) var(--anim-ease);
+      box-shadow: 0 0 8px var(--color-gold-glow);
+      overflow: hidden;
+    }
+
+    .collapsible-header {
+      background: rgba(191, 164, 92, 0.1);
+      padding: var(--spacing-sm);
+      cursor: pointer;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: var(--border-width) solid rgba(191, 164, 92, 0.2);
+      transition: background-color 0.3s ease;
+    }
+
+    .collapsible-header:hover {
+      background-color: rgba(255, 215, 0, 0.12); /* faint golden glow on hover */
+    }
+
+    .collapsible-arrow {
+      display: inline-block;
+      transition: transform 0.3s ease;
+    }
+
+    .collapsible-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease-out, padding 0.4s ease-out;
+      padding: 0 var(--spacing-md);
+    }
+
+    .collapsible-content.expanded {
+      max-height: 800px;
+      padding: var(--spacing-md);
+    }
+
+    /* ==================== FEEDBACK MODAL ==================== */
+    .modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: var(--z-modal);
+    }
+    .modal.hidden {
+      display: none;
+    }
+    .modal-content {
+      background: var(--color-bg-surface);
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 0 8px var(--color-gold-glow);
+    }
+
+    /* ==================== KEYFRAMES ==================== */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(calc(var(--spacing-sm) * 2)); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+
+  <!-- ==================== EXTERNAL RESOURCES (PLACEHOLDERS) ==================== -->
+  <!-- <link rel="stylesheet" href="css/styles.css"> -->
+  <!-- <link rel="manifest" href="/site.webmanifest"> -->
+</head>
+
+<body>
+  <!-- ==================== STYLES: Dark Mode & Gold Glow ==================== -->
+  <style>
+    /* Reset & base */
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      font-family: var(--font-family-base);
+      background: var(--color-bg-base);
+      color: var(--color-text-primary);
+    }
+    a {
+      color: var(--color-accent);
+      text-decoration: none;
+    }
+    a:hover, a:focus {
+      text-decoration: underline;
+    }
+
+    /* Focus outline with gold glow */
+    :focus {
+      outline: 2px solid var(--color-gold);
+      outline-offset: 2px;
+    }
+
+    /* HEADER: Branding & Controls */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--spacing-md);
+      background: var(--color-bg-muted);
+      border-bottom: var(--border-width) solid rgba(255,255,255,0.05);
+    }
+    .branding {
+      font-size: var(--font-size-xl);
+      font-weight: bold;
+      color: var(--color-text-primary);
+    }
+    .control-group {
+      display: flex;
+      gap: var(--spacing-sm);
+    }
+    .toggle-button {
+      background: var(--color-bg-surface);
+      color: var(--color-text-primary);
+      border: var(--border-width) solid var(--color-gold);
+      border-radius: var(--radius-sm);
+      padding: var(--spacing-xs) var(--spacing-sm);
+      cursor: pointer;
+      box-shadow: 0 0 6px var(--color-gold-glow);
+      transition: background var(--anim-duration-fast) var(--anim-ease),
+                  box-shadow var(--anim-duration-fast) var(--anim-ease);
+    }
+    .toggle-button[aria-checked="true"],
+    .toggle-button:hover,
+    .toggle-button:focus {
+      box-shadow: 0 0 10px rgba(191,164,92,0.6);
+      background: rgba(255,255,255,0.05);
+    }
+
+    /* MAIN: Chat area */
+    main#mainContent {
+      flex: 1;
+      overflow-y: auto;
+      padding: var(--spacing-md);
+      background: var(--color-bg-surface);
+    }
+    #chat {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+    .msg {
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      border: var(--border-width) solid var(--color-gold);
+      box-shadow: 0 0 6px var(--color-gold-glow);
+      max-width: 80%;
+      animation: fadeIn var(--anim-duration-medium) var(--anim-ease);
+    }
+    .msg.user {
+      background: var(--color-bg-muted);
+      align-self: flex-end;
+    }
+    .msg.ai {
+      background: var(--color-bg-base);
+      align-self: flex-start;
+    }
+    .msg-header {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+    .speaker-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: var(--font-size-md);
+      color: var(--color-text-primary);
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    #liveTranscript {
+      font-style: italic;
+      color: var(--color-text-secondary);
+    }
+
+    /* — Agent Reasoning Breakdown Panel — */
+    .agent-box {
+      background: var(--color-bg-muted);
+      border: var(--border-width) solid var(--color-gold);
+      border-radius: var(--radius-md);
+      box-shadow: 0 0 6px var(--color-gold-glow);
+      overflow: hidden;
+      width: 100%;
+      margin-top: var(--spacing-sm);
+      animation: fadeIn var(--anim-duration-medium) var(--anim-ease);
+    }
+
+    .collapsible-header {
+      display: flex;
+      align-items: center;
+      padding: var(--spacing-sm) var(--spacing-md);
+      background: var(--color-bg-surface);
+      cursor: pointer;
+      user-select: none;
+      border-bottom: var(--border-width) solid rgba(255,255,255,0.05);
+    }
+
+    .collapsible-header .collapsible-arrow {
+      margin-left: auto;
+      transition: transform var(--anim-duration-fast) var(--anim-ease);
+      color: var(--color-text-secondary);
+    }
+
+    .collapsible-content {
+      max-height: 0;
+      overflow: hidden;
+      transition:
+        max-height var(--anim-duration-medium) var(--anim-ease),
+        padding var(--anim-duration-medium) var(--anim-ease);
+      padding: 0 var(--spacing-md);
+    }
+
+    .collapsible-content.expanded {
+      max-height: 800px;
+      padding: var(--spacing-md);
+    }
+
+    /* FOOTER: Input Form */
+    form#chatForm {
+      display: flex;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-md);
+      background: var(--color-bg-muted);
+      border-top: var(--border-width) solid rgba(255,255,255,0.05);
+    }
+    .input-group {
+      display: flex;
+      flex: 1;
+      gap: var(--spacing-sm);
+    }
+    .input-group input {
+      flex: 1;
+      padding: var(--spacing-sm);
+      background: var(--color-bg-surface);
+      color: var(--color-text-primary);
+      border: var(--border-width) solid var(--color-gold);
+      border-radius: var(--radius-sm);
+      box-shadow: 0 0 6px var(--color-gold-glow);
+    }
+    .input-group input:focus {
+      outline: none;
+      box-shadow: 0 0 10px rgba(191,164,92,0.6);
+    }
+    .input-group button {
+      background: var(--color-bg-surface);
+      color: var(--color-text-primary);
+      border: var(--border-width) solid var(--color-gold);
+      border-radius: var(--radius-sm);
+      padding: var(--spacing-xs) var(--spacing-sm);
+      cursor: pointer;
+      box-shadow: 0 0 6px var(--color-gold-glow);
+      transition: box-shadow var(--anim-duration-fast) var(--anim-ease);
+    }
+    .input-group button:hover,
+    .input-group button:focus {
+      box-shadow: 0 0 10px rgba(191,164,92,0.6);
+      outline: none;
+    }
+
+    /* FEEDBACK MODAL & BACKDROP */
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: var(--z-modal);
+    }
+    .modal-backdrop.hidden {
+      display: none;
+    }
+    .modal {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--color-bg-surface);
+      border: var(--border-width) solid var(--color-gold);
+      border-radius: var(--radius-md);
+      box-shadow: 0 0 10px var(--color-gold-glow);
+      z-index: calc(var(--z-modal) + 1);
+      width: 90%; max-width: 400px;
+    }
+    .modal.hidden {
+      display: none;
+    }
+    .modal-content {
+      display: flex;
+      flex-direction: column;
+      padding: var(--spacing-md);
+    }
+    .modal-content h2 {
+      margin: 0;
+      color: var(--color-text-primary);
+    }
+    .modal-content textarea {
+      width: 100%;
+      padding: var(--spacing-sm);
+      background: var(--color-bg-muted);
+      color: var(--color-text-primary);
+      border: var(--border-width) solid var(--color-gold);
+      border-radius: var(--radius-sm);
+      box-shadow: 0 0 6px var(--color-gold-glow);
+      resize: vertical;
+    }
+    .modal-content textarea:focus {
+      outline: none;
+      box-shadow: 0 0 10px rgba(191,164,92,0.6);
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--spacing-sm);
+    }
+    .speaker-icon {
+      font-size: 1.1em;
+      color: var(--color-gold, #bfa45c);
+      margin-right: 6px;
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+
+    .speaker-icon:hover {
+      transform: scale(1.2);
+      color: #ffe58a;
+    }
+  </style>
+
+  <!-- ==================== HEADER: Branding & Global Controls ==================== -->
+  <header role="banner">
+    <div class="branding" role="heading" aria-level="1">🌐 Magistus AGI</div>
+    <div class="control-group" role="group" aria-label="Global controls">
+      <button id="toggleReasoning" type="button" class="toggle-button" role="switch" aria-checked="true" aria-label="Toggle reasoning">
+        🧠 Reasoning: ON
+      </button>
+      <button id="selfEvalToggle" type="button" class="toggle-button" role="switch" aria-checked="false" aria-label="Toggle self‑evaluation">
+        📝 Self‑Eval: OFF
+      </button>
+      <button id="ttsToggle" type="button" class="toggle-button" role="switch" aria-checked="true" aria-label="Toggle text‑to‑speech">
+        🔈
+      </button>
+      <button id="feedbackBtn" type="button" class="toggle-button" aria-haspopup="dialog" aria-controls="feedbackModal" aria-label="Open feedback form">
+        💬 Feedback
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN: Conversation Display ==================== -->
+  <main id="mainContent" role="main">
+    <div id="chat" aria-live="polite" aria-label="Conversation"></div>
+    <div id="liveTranscript" class="visually-hidden" aria-live="assertive" aria-label="Live transcript"></div>
+  </main>
+
+  <!-- ==================== FOOTER: Input Form ==================== -->
+  <form id="chatForm" role="form" aria-label="Chat input form">
+    <div class="input-group">
+      <textarea
+        id="userInput"
+        name="userInput"
+        aria-label="Type your message"
+        placeholder="Type your message..."
+        autocomplete="off"
+        rows="2"
+        style="resize: vertical;"
+        required
+      ></textarea>
+      <button type="button" id="micBtn" aria-label="Start voice input">🎙️</button>
+      <button type="submit" id="sendBtn" aria-label="Send message">Send</button>
+    </div>
+  </form>
+
+  <!-- ==================== MODAL: Feedback Form (hidden by default) ==================== -->
+  <div id="feedbackBackdrop" class="modal-backdrop hidden"></div>
+  <div
+    id="feedbackModal"
+    class="modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="feedbackTitle"
+  >
+    <div class="modal-content">
+      <h2 id="feedbackTitle">Feedback</h2>
+      <p id="feedbackDesc" class="visually-hidden">
+        Enter your feedback to help improve Magistus.
+      </p>
+      <textarea
+        id="feedbackInput"
+        aria-describedby="feedbackDesc"
+        rows="4"
+        placeholder="Your feedback..."
+        required
+      ></textarea>
+      <div class="modal-actions">
+        <button id="submitFeedback" type="button" aria-label="Submit feedback">Submit</button>
+        <button id="closeFeedback" type="button" aria-label="Close feedback dialog">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SCRIPTS: UI Logic & Event Handlers ==================== -->
+<script>
+  // — Element references —
+  const chat            = document.getElementById('chat');
+  const form            = document.getElementById('chatForm');
+  const input           = document.getElementById('userInput');
+  const ttsToggle       = document.getElementById('ttsToggle');
+  const toggleBtn       = document.getElementById('toggleReasoning');
+  const selfEvalToggle  = document.getElementById('selfEvalToggle');
+  const feedbackBtn     = document.getElementById('feedbackBtn');
+  const feedbackModal   = document.getElementById('feedbackModal');
+  const feedbackBackdrop= document.getElementById('feedbackBackdrop');
+  const closeFeedback   = document.getElementById('closeFeedback');
+  const submitFeedback  = document.getElementById('submitFeedback');
+  const feedbackInput   = document.getElementById('feedbackInput');
+  const transcriptDiv   = document.getElementById('liveTranscript');
+  const micBtn          = document.getElementById('micBtn');
+
+  // — State initialization —
+  let reasoningEnabled = JSON.parse(localStorage.getItem("reasoning_enabled") || "true");
+  let ttsEnabled       = true;
+  let selfEvalEnabled  = JSON.parse(localStorage.getItem("self_eval_enabled")  || "false");
+
+  // — Update toggle labels, ARIA states & styling —
+  function updateToggles() {
+    toggleBtn.textContent      = reasoningEnabled ? "🧠 Reasoning: ON"  : "🧠 Reasoning: OFF";
+    toggleBtn.setAttribute('aria-checked', reasoningEnabled);
+    ttsToggle.textContent      = ttsEnabled      ? "🔈"                : "🔇";
+    ttsToggle.setAttribute('aria-checked', ttsEnabled);
+    selfEvalToggle.textContent = selfEvalEnabled  ? "📝 Self‑Eval: ON"  : "📝 Self‑Eval: OFF";
+    selfEvalToggle.setAttribute('aria-checked', selfEvalEnabled);
+  }
+  updateToggles();
+
+  // — Toggle event handlers —
+  toggleBtn.addEventListener('click', () => {
+    reasoningEnabled = !reasoningEnabled;
+    localStorage.setItem("reasoning_enabled", JSON.stringify(reasoningEnabled));
+    updateToggles();
+  });
+  ttsToggle.addEventListener('click', () => {
+    ttsEnabled = !ttsEnabled;
+    updateToggles();
+    if (!ttsEnabled && 'speechSynthesis' in window) speechSynthesis.cancel();
+  });
+  selfEvalToggle.addEventListener('click', () => {
+    selfEvalEnabled = !selfEvalEnabled;
+    localStorage.setItem("self_eval_enabled", JSON.stringify(selfEvalEnabled));
+    updateToggles();
+  });
+
+  // — Feedback modal logic: open, close, backdrop click, ESC key —
+  function openFeedback() {
+    feedbackBackdrop.classList.remove('hidden');
+    feedbackModal.classList.remove('hidden');
+    feedbackInput.focus();
+  }
+  function closeFeedbackDialog() {
+    feedbackModal.classList.add('hidden');
+    feedbackBackdrop.classList.add('hidden');
+    feedbackBtn.focus();
+  }
+  feedbackBtn.addEventListener('click', openFeedback);
+  closeFeedback.addEventListener('click', closeFeedbackDialog);
+  feedbackBackdrop.addEventListener('click', closeFeedbackDialog);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !feedbackModal.classList.contains('hidden')) {
+      closeFeedbackDialog();
+    }
+  });
+  submitFeedback.addEventListener('click', async () => {
+    const feedback = feedbackInput.value.trim();
+    if (!feedback) return;
+    await fetch('/feedback', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ feedback })
+    });
+    feedbackInput.value = '';
+    closeFeedbackDialog();
+    alert('Thank you for your feedback!');
+  });
+
+  // — Text-to-speech helper —
+  function speak(text) {
+    if (!ttsEnabled || !text) return;
+    const trySpeak = () => {
+      const voices = speechSynthesis.getVoices();
+      const utter  = new SpeechSynthesisUtterance(text);
+      utter.lang   = 'en-GB';
+      const pref   = voices.find(v =>
+        v.name.includes("Microsoft Libby") ||
+        v.name.includes("Google UK English Female")
+      );
+      if (pref) utter.voice = pref;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utter);
+    };
+    if (speechSynthesis.getVoices().length === 0) {
+      speechSynthesis.onvoiceschanged = trySpeak;
+    } else {
+      trySpeak();
+    }
+  }
+
+  // — Append chat messages (user & AI) with animations —
+  function appendMessage(text, sender) {
+    const div = document.createElement('div');
+    div.className = `msg ${sender}`;
+
+    // Simple Markdown → HTML
+    let formatted = text
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/\n/g, '<br>');
+
+    if (sender === 'user') {
+      div.innerHTML = `<strong>You:</strong><br>${formatted}`;
+    } else {
+      const header = document.createElement('div');
+      header.className = 'msg-header';
+
+      const speakerBtn = document.createElement('span');
+      speakerBtn.className = 'speaker-icon';
+      speakerBtn.setAttribute('aria-label', 'Replay this message');
+      speakerBtn.innerHTML = '🔊';
+      speakerBtn.style.cursor = 'pointer';
+      speakerBtn.style.marginRight = '6px';
+
+      // Click to replay the message
+      speakerBtn.addEventListener('click', () => speak(text));
+
+      const label = document.createElement('strong');
+      label.innerText = 'Magistus:';
+
+      header.append(speakerBtn, label);
+      div.appendChild(header);
+      const body = document.createElement('div');
+      body.className = 'msg-body';
+      body.innerHTML = `<br>${formatted}`;
+      div.appendChild(body);
+
+      // Auto-speak on render
+      speak(text);
+    }
+
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+    return div;
+  }
+
+  // — Append agent reasoning breakdown (collapsible panels) —
+  function appendAgentThoughts(thoughts) {
+    if (!reasoningEnabled || !Array.isArray(thoughts)) return;
+
+    const container = document.createElement('div');
+    container.className = 'agent-box';
+
+    const header = document.createElement('div');
+    header.className = 'collapsible-header';
+    header.innerHTML = `🧠 Agent Reasoning Breakdown <span class="collapsible-arrow">▶</span>`;
+
+    const content = document.createElement('div');
+    content.className = 'collapsible-content';
+
+    thoughts.forEach(agent => {
+      const agentName   = agent?.agent_name || "Unknown Agent";
+      const confidence  = agent?.confidence ?? "N/A";
+      const contentText = agent?.content || "No content returned.";
+      const flags       = agent?.flags ? JSON.stringify(agent.flags) : "[]";
+      const reasons     = Array.isArray(agent?.reasons) ? agent.reasons : [];
+      const reasonsList = reasons.length
+        ? reasons.map(r => `<li>${r}</li>`).join('')
+        : "<li>No reasons provided.</li>";
+
+      const block = document.createElement('div');
+      block.innerHTML = `
+        <p><strong>${agentName}</strong> | Confidence: ${confidence}</p>
+        <p><em>${contentText}</em></p>
+        <p class="flags">Flags: ${flags}</p>
+        <p>Top Reasons:</p>
+        <ul>${reasonsList}</ul>
+      `;
+      content.appendChild(block);
+    });
+
+    container.append(header, content);
+    chat.appendChild(container);
+    chat.scrollTop = chat.scrollHeight;
+
+    // Ensure collapsible behavior is working
+    header.addEventListener('click', () => {
+      content.classList.toggle('expanded');
+      const arrow = header.querySelector('.collapsible-arrow');
+      arrow.textContent = content.classList.contains('expanded') ? '▼' : '▶';
+
+      // Animate content height
+      content.style.transition = 'max-height 0.4s ease-out';
+      if (content.classList.contains('expanded')) {
+        content.style.maxHeight = content.scrollHeight + 'px'; // Expand to fit content
+      } else {
+        content.style.maxHeight = '0'; // Collapse it back
+      }
+
+      // Animate arrow rotation
+      arrow.style.transform = content.classList.contains('expanded') ? 'rotate(90deg)' : 'rotate(0deg)';
+      arrow.style.transition = 'transform 0.3s ease';
+    });
+  }
+
+  // Form submit event calls appendAgentThoughts(data.agent_thoughts)
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    appendMessage(text, 'user');
+    input.value = '';
+    const loading = appendMessage('...', 'ai');
+    let dots = 1;
+    const loader = setInterval(() => {
+      loading.innerText = 'Magistus: ' + '.'.repeat(dots);
+      dots = (dots % 3) + 1;
+    }, 500);
+    try {
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          input: text,
+          reasoning_enabled: reasoningEnabled,
+          self_eval_enabled: selfEvalEnabled
+        })
+      });
+      clearInterval(loader);
+      const data = await res.json();
+      loading.innerHTML = `Magistus:<br>${data.response.replace(/\n/g,'<br>')}`;
+      if (data.voice_output) speak(data.response);
+      if (data.agent_thoughts) appendAgentThoughts(data.agent_thoughts);
+    } catch (err) {
+      clearInterval(loader);
+      loading.innerHTML = 'Magistus: [Error receiving response]';
+      console.error(err);
+    }
+  });
+
+  // — Speech recognition for live input —
+  if ("SpeechRecognition" in window || "webkitSpeechRecognition" in window) {
+    const SR   = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recog = new SR();
+    recog.lang          = "en-GB";
+    recog.interimResults= true;
+    recog.continuous    = false;
+    let finalText       = "";
+    recog.onstart = () => {
+      micBtn.innerText = "🛑";
+      transcriptDiv.classList.remove('visually-hidden');
+      transcriptDiv.innerText = "[Listening...]";
+    };
+    recog.onresult = e => {
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalText += t;
+        else interim += t;
+      }
+      transcriptDiv.innerText = finalText + interim;
+    };
+    recog.onerror = () => {
+      micBtn.innerText = "🎙️";
+      transcriptDiv.classList.add('visually-hidden');
+    };
+    recog.onend = () => {
+      micBtn.innerText = "🎙️";
+      transcriptDiv.classList.add('visually-hidden');
+      if (finalText.trim()) {
+        input.value = finalText.trim();
+        form.dispatchEvent(new Event('submit'));
+      }
+      finalText = "";
+    };
+    micBtn.addEventListener('click', () => {
+      if (micBtn.innerText === "🎙️") recog.start();
+      else recog.stop();
+    });
+  } else {
+    micBtn.disabled = true;
+    micBtn.title = "Speech recognition not supported";
+  }
+
+  // — Submit on Enter, allow line break on Shift+Enter —
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      form.dispatchEvent(new Event('submit'));
+    }
+  });
+</script>
+</body>
+

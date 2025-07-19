@@ -3,12 +3,14 @@ from datetime import datetime
 from uuid import uuid4
 import json
 import os
+from pathlib import Path
 
-from .memory_index_entry import MemoryIndexEntry
+from meta_learning.memory_index_entry import MemoryIndexEntry
+from meta_learning.utils import append_memory_entry_to_store, append_to_magistus_profile
+
 from llm_wrapper import generate_response
 from agents.agent_base import AgentInterface
 from context_types import AgentThought
-from .utils import append_memory_entry_to_store, append_to_magistus_profile
 
 
 class MetaLearningSupervisor(AgentInterface):
@@ -16,13 +18,14 @@ class MetaLearningSupervisor(AgentInterface):
     role = "Monitors and reflects on the system's recent performance, generating meta-insights and suggested behavioral adjustments."
 
     def run(self, context=None, prior_thoughts: List[AgentThought] = []) -> AgentThought:
-        try:
-            memory_path = "utils/memorystore.jsonl"
-            if not os.path.exists(memory_path):
-                raise FileNotFoundError("Memory file not found")
+        
+        MEMORY_JSONL_PATH = Path("meta_learning/memorystore.jsonl")
+        MEMORY_JSONL_PATH.parent.mkdir(parents=True, exist_ok=True)
+        MEMORY_JSONL_PATH.touch(exist_ok=True)  # ✅ ensures file is created if missing
 
+        try:
             # ✅ Parse last full interaction block from JSONL
-            with open(memory_path, "r", encoding="utf-8") as f:
+            with open(MEMORY_JSONL_PATH, "r", encoding="utf-8") as f:
                 last_line = f.readlines()[-1]
 
             latest_block = json.loads(last_line)
@@ -62,6 +65,7 @@ No markdown. No user-facing language.
             # ✅ Save structured reflection to memory index
             memory_entry = MemoryIndexEntry(
                 id=str(uuid4()),
+                agent=self.name,
                 context=reasoning_summary,
                 insight=reflection_data.get("insight", ""),
                 behavioral_adjustment=reflection_data.get("behavioral_adjustment", ""),
@@ -82,6 +86,19 @@ No markdown. No user-facing language.
                 "meta_reflection": memory_entry.meta_reflection
             }
             append_to_magistus_profile(profile_summary)
+
+            # ✅ Inject reflection into latest structured .json memory file
+            structured_dir = Path("meta_learning/memory_store")
+            latest_file = sorted(structured_dir.glob("*.json"), reverse=True)[0]
+            with open(latest_file, "r+", encoding="utf-8") as f:
+                data = json.load(f)
+                data["insight"] = reflection_data.get("insight", "")
+                data["behavioral_adjustment"] = reflection_data.get("behavioral_adjustment", "")
+                data["reflective_summary"] = None
+                data["tags"] = sorted(list(set(data.get("tags", []) + reflection_data.get("tags", []))))
+                f.seek(0)
+                json.dump(data, f, indent=2)
+                f.truncate()
 
             return AgentThought(
                 agent_name=self.name,
@@ -147,6 +164,7 @@ Return a compact JSON with:
 
         return MemoryIndexEntry(
             id=str(uuid4()),
+            agent=self.name,
             context=reasoning_trace,
             insight=parsed["insight"],
             behavioral_adjustment=parsed["behavioral_adjustment"],

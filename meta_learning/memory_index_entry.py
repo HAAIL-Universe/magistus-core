@@ -1,7 +1,13 @@
 from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel, Field
+import json
+from pathlib import Path
+import logging
 
+# ----------------------------
+# 📦 Memory Entry Model
+# ----------------------------
 
 class MemoryIndexEntry(BaseModel):
     """
@@ -12,24 +18,46 @@ class MemoryIndexEntry(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Time when the memory was created.")
     tags: List[str] = Field(default_factory=list, description="Relevant themes or categories.")
     context: str = Field(..., description="The conversational or cognitive context in which this memory arose.")
-    insight: str = Field(..., description="The distilled reflection or takeaway.")
-    behavioral_adjustment: str = Field(..., description="How Magistus should adapt based on this reflection.")
+    insight: Optional[str] = Field(None, description="The distilled reflection or takeaway.")
+    behavioral_adjustment: Optional[str] = Field(None, description="How Magistus should adapt based on this reflection.")
     reflective_summary: Optional[str] = Field(None, description="Optional summary given to the user.")
     relevance_score: float = Field(1.0, ge=0.0, le=1.0, description="Score for how crucial this memory is (default: 1.0).")
     meta_reflection: Optional[str] = Field(None, description="Post-hoc introspective commentary on the entry.")
+    agent: Optional[str] = Field(None, description="Agent or module that created this memory.")
+    goals: Optional[List[str]] = Field(default_factory=list, description="User or system goals related to the memory.")
+    flags: Optional[dict] = Field(default_factory=dict, description="Any ethical/safety/etc. flags.")
+    persona_updates: Optional[dict] = Field(default_factory=dict, description="Updates to persona model if any.")
 
+# ----------------------------
+# 📁 Paths & Globals
+# ----------------------------
 
-# ✅ Example test
-if __name__ == "__main__":
-    example = MemoryIndexEntry(
-        id="meta_learning_2025_07_15",
-        tags=["meta-learning", "self-reflection", "evolution"],
-        context="Magistus and user discussed how a memory system could evolve through meta-cognitive analysis.",
-        insight="Simulated memory entries could allow Magistus to reflect on its answers, improving behavior across future reasoning loops.",
-        behavioral_adjustment="Tag and index deep philosophical exchanges for future reference when similar cognitive themes reoccur.",
-        reflective_summary="Exploration of how synthetic cognition could simulate learning to learn.",
-        relevance_score=0.92,
-        meta_reflection="Final comment about how well this entry reflects internal goals."
-    )
+SHORT_TERM_MEMORY_DIR = Path("short_term_memory")
 
-    print(example.json(indent=2))
+def load_memory_index(limit: int = 100) -> List[dict]:
+    """
+    Dynamically loads the latest `limit` short-term memory summaries
+    from the short_term_memory folder, sorted by timestamp.
+    """
+    entries = []
+
+    if not SHORT_TERM_MEMORY_DIR.exists():
+        logging.warning(f"Short-term memory folder not found: {SHORT_TERM_MEMORY_DIR}")
+        return []
+
+    files = sorted(SHORT_TERM_MEMORY_DIR.glob("*.json"), reverse=True)
+
+    for fpath in files:
+        if len(entries) >= limit:
+            break
+
+        try:
+            with open(fpath, "r", encoding="utf-8") as f:
+                raw = json.load(f)
+                entry = MemoryIndexEntry(**raw)
+                entries.append(entry.dict())
+        except Exception as e:
+            logging.warning(f"⛔ Failed to parse short-term memory file '{fpath.name}': {e}")
+            continue
+
+    return entries

@@ -13,11 +13,14 @@ agents_enabled:
   - statistical_reasoning_agent
   - predictive_memory_manager
 
+
+
 # === System Modules ===
 voice_output: true
 debug_mode: true
 web_search_enabled: true
 reflective_self_monitor_enabled: true
+log_prompts: true
 
 # === Reasoning & Evolution (Phase 4–6) ===
 thought_evolution_logging: true

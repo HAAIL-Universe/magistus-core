@@ -14,13 +14,18 @@ class ContextBundle(BaseModel):
     user_input: str
     memory_matches: List[str]
     timestamp: str
+    utc_timestamp: Optional[str] = None
     config: Dict[str, Any]
 
     ethical_compass: Optional[EthicalCompass] = EthicalCompass()
     user_profile: Optional[UserProfile] = None
     persona_core: Optional[PersonaCore] = None
     services: Optional[dict] = None
+    prior_memories: Optional[List[Dict[str, Any]]] = []
     system_goals: Optional[str] = ""
+
+    # ✅ NEW: dynamic runtime prompts for specific agents
+    dynamic_prompt_state: Dict[str, Any] = {}
 
     # ✅ This line tells Pydantic to allow non-BaseModel types
     model_config = {
@@ -35,16 +40,26 @@ class ContextBundle(BaseModel):
         config: Dict[str, Any],
         ethical_compass: Optional[EthicalCompass] = None,
         user_profile: Optional[UserProfile] = None,
-        persona_core: Optional[PersonaCore] = None
+        persona_core: Optional[PersonaCore] = None,
+        services: Optional[dict] = None,
+        prior_memories: Optional[List[Dict[str, Any]]] = None,
+        system_goals: Optional[str] = "",
+        dynamic_prompt_state: Optional[Dict[str, Any]] = None
     ):
+        now = datetime.utcnow()
         return cls(
             user_input=user_input,
             memory_matches=memory_matches,
-            timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            timestamp=now.strftime("%Y-%m-%d %H:%M:%S"),
+            utc_timestamp=now.isoformat(),
             config=config,
             ethical_compass=ethical_compass or EthicalCompass(),
             user_profile=user_profile,
-            persona_core=persona_core
+            persona_core=persona_core,
+            services=services,
+            prior_memories=prior_memories or [],
+            system_goals=system_goals,
+            dynamic_prompt_state=dynamic_prompt_state or {}
         )
 
 

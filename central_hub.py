@@ -6,7 +6,7 @@ from context_types import ContextBundle, AgentThought
 from memory import MemoryRetriever, log_memory
 from utils.json_memory_logger import log_json_memory
 from llm_wrapper import generate_response
-from agents.goal_tracker import GoalTracker
+from agents.goal_management.goal_tracker import GoalTracker
 from ethical.ethical_compass import EthicalCompass
 from user_profile import UserProfile
 from persona_core import PersonaCore
@@ -16,16 +16,16 @@ from uuid import uuid4
 from meta_learning.memory_index_entry import MemoryIndexEntry
 from agents.statistical_reasoning_agent import StatisticalReasoningAgent
 from agents.predictive_memory_manager import PredictiveMemoryManager
+from agents.memory_retriever_agent import MemoryRetrieverAgent
+from utils.prompt_builder import build_dynamic_prompt
 
 def run_agents(context: ContextBundle, prior_thoughts: Optional[List[AgentThought]] = None) -> List[AgentThought]:
-    # Fetch the config from the context, which should already have enabled_agents defined
     config = context.config
-    enabled_agents = config.get("agents_enabled", [])  # Get the enabled agents directly from the config
+    enabled_agents = config.get("agents_enabled", [])
     debug_mode = config.get("debug_mode", False)
 
     thoughts: List[AgentThought] = []
 
-    # Iterate through the enabled agents and run each one
     for agent_name in enabled_agents:
         try:
             agent_module = importlib.import_module(f"agents.{agent_name}")
@@ -38,7 +38,6 @@ def run_agents(context: ContextBundle, prior_thoughts: Optional[List[AgentThough
             print(f"[ERROR] Agent '{agent_name}' failed: {e}")
 
     return thoughts
-
 
 def detect_contradictions(thoughts: List[AgentThought]) -> List[str]:
     contradictions = []
@@ -66,13 +65,11 @@ def fuse_agent_thoughts(round1: List[AgentThought], round2: List[AgentThought]) 
 
     return best.content.strip(), debug_notes.strip(), round2
 
-
 def run_magistus(
     user_input: str,
     allow_self_eval: bool = False
 ) -> Tuple[ContextBundle, List[AgentThought], str, str, Optional[MemoryIndexEntry]]:
 
-    # Load the config which contains 'enabled_agents'
     config = load_config()
     compass = EthicalCompass()
     profile = UserProfile()
@@ -86,10 +83,26 @@ def run_magistus(
 
     retriever = MemoryRetriever(k=5)
     memory_matches = retriever.search(user_input)
+
+    from memory import log_memory_recall
+    if memory_matches:
+        formatted_matches = []
+        for match in memory_matches:
+            formatted_matches.append({
+                "uuid": match.get("id", str(uuid4())),
+                "score": match.get("relevance_score", 0.5),
+                "summary": match.get("summary")
+                    or match.get("insight")
+                    or match.get("content", "[no summary]")
+            })
+        log_memory_recall(user_input, formatted_matches, triggering_agent="central_hub")
+
     goal_tracker = GoalTracker()
+    summaries_only = [m.get("summary", "[no summary]") for m in memory_matches]
+
     context = ContextBundle.from_input(
         user_input=user_input,
-        memory_matches=memory_matches,
+        memory_matches=summaries_only,
         config=config,
         ethical_compass=compass,
         user_profile=profile,
@@ -99,12 +112,24 @@ def run_magistus(
         "goal_tracker": goal_tracker
     }
 
-    # Create the StatisticalReasoningAgent and PredictiveMemoryManager
-    stat_agent = StatisticalReasoningAgent(historical_data=[1, 2, 3, 4, 5])  # Example data
+    # Inject dynamic_prompt_state
+    if "prefrontal_cortex" in config.get("agents_enabled", []):
+        dynamic_prompt = build_dynamic_prompt(
+            agent_name="prefrontal_cortex",
+            memory_snippets=summaries_only,
+            user_goals=[g.description for g in goal_tracker.get_active_goals()] if hasattr(goal_tracker, "get_active_goals") else [],
+            recent_tags=config.get("recent_tags", [])
+        )
+        context.dynamic_prompt_state["prefrontal_cortex"] = dynamic_prompt
+
+    stat_agent = StatisticalReasoningAgent(historical_data=[1, 2, 3, 4, 5])
     memory_manager = PredictiveMemoryManager()
 
-    # Initialize reasoning pipeline with the newly created agents
-    round1_thoughts = run_agents(context)  # No need to pass enabled_agents anymore
+    memory_retriever = MemoryRetrieverAgent()
+    memory_thought = memory_retriever.run(context)
+    print(f"[MemoryRetriever] → {memory_thought.content}")
+
+    round1_thoughts = run_agents(context)
     round2_thoughts = run_agents(context, prior_thoughts=round1_thoughts)
 
     fused_summary, debug_metadata, final_thoughts = fuse_agent_thoughts(round1_thoughts, round2_thoughts)
@@ -138,11 +163,10 @@ def run_magistus(
             agent_thoughts=round2_thoughts,
             debug_notes=debug_metadata
         )
-        append_memory_entry_to_store(memory_entry)  # Will write to /meta_learning/memory_store
+        append_memory_entry_to_store(memory_entry)
     except Exception as e:
         print(f"[MetaLearning] Failed to save structured memory entry: {e}")
 
-    # (Optional legacy Markdown log)
     log_memory(
         markdown_text=(
             f"# 🧠 Magistus Reasoning Cycle\n"

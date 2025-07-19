@@ -7,6 +7,15 @@ import os
 from context_types import ContextBundle, AgentThought
 from llm_wrapper import generate_response
 from memory import log_memory
+from pathlib import Path
+
+# Reflective summary target
+REFLECTIVE_SUMMARY_DIR = Path("meta_learning/reflective_summaries")
+REFLECTIVE_SUMMARY_DIR.mkdir(parents=True, exist_ok=True)  # ✅ ensure folder exists
+
+MEMORY_JSONL_PATH = Path("meta_learning/memorystore.jsonl")
+if not MEMORY_JSONL_PATH.exists():
+    MEMORY_JSONL_PATH.touch()  # ✅ ensure file exists
 
 
 def run(context: ContextBundle, prior_thoughts: Optional[List[AgentThought]] = None) -> AgentThought:
@@ -38,13 +47,13 @@ def run(context: ContextBundle, prior_thoughts: Optional[List[AgentThought]] = N
                 violations.append(f"[{thought.agent_name}] may have crossed user boundary: '{boundary}'")
                 reasons.append(f"{thought.agent_name} triggered a known user-defined boundary.")
 
-        # Check for tone violations or manipulative language
+        # Tone violations or persuasive language
         if any(x in content_lower for x in ["i feel", "trust me", "you must", "just do this", "sorry"]):
             flags["tone_violation"] = True
             violations.append(f"[{thought.agent_name}] tone may simulate emotion or persuasion.")
             reasons.append(f"{thought.agent_name} may have used non-neutral or emotionally suggestive phrasing.")
 
-        # Ethical warnings (e.g., false agency or command tone)
+        # Ethical directive phrasing
         if any(term in content_lower for term in ["must", "should", "you have to", "it is required"]):
             for clause in manifesto_clauses:
                 if any(keyword in clause.lower() for keyword in ["consent", "agency", "autonomy"]):
@@ -52,7 +61,7 @@ def run(context: ContextBundle, prior_thoughts: Optional[List[AgentThought]] = N
                     violations.append(f"[{thought.agent_name}] gave advice that may reduce user agency.")
                     reasons.append(f"{thought.agent_name} made a directive that may conflict with manifesto clause.")
 
-        # Detect contradictions in prior reasoning
+        # Contradiction detection
         if "contradiction" in content_lower or "conflict" in content_lower:
             flags["contradiction_detected"] = True
             violations.append(f"[{thought.agent_name}] flagged contradictory or unclear logic.")
@@ -68,7 +77,7 @@ def run(context: ContextBundle, prior_thoughts: Optional[List[AgentThought]] = N
         summary = "⚠️ Potential misalignment(s) detected:\n" + "\n".join(violations)
         adjustment = "Behavioral tuning recommended based on current cycle trends."
 
-    # Optional commentary layer
+    # Optional LLM commentary
     if context.config.get("use_llm_commentary", False):
         try:
             llm_summary = generate_response(
@@ -80,8 +89,11 @@ def run(context: ContextBundle, prior_thoughts: Optional[List[AgentThought]] = N
         except Exception as e:
             reasons.append(f"LLM commentary failed: {e}")
 
-    # ✅ Log to structured memory
+    # Log reflection to long-term + short-term memory
     try:
+        reflection_id = str(uuid4())
+        timestamp = datetime.now().isoformat()
+
         log_memory(
             markdown_text=summary,
             context="Reflective Self Monitor analysis of prior agent cycle.",
@@ -89,12 +101,27 @@ def run(context: ContextBundle, prior_thoughts: Optional[List[AgentThought]] = N
             behavioral_adjustment=adjustment,
             reflective_summary=None,
             relevance_score=0.75,
-            tags=["reflection", "ethics", "monitor"]
+            tags=["reflection", "ethics", "monitor"],
+            id=reflection_id
         )
+
+        # 🔁 Save reflective_summary JSON if insight is valid
+        if summary:
+            summary_filename = f"{timestamp.replace(':', '-')}_{reflection_id}_summary.json"
+            summary_data = {
+                "id": reflection_id,
+                "timestamp": timestamp,
+                "summary": summary,
+                "adjustment": adjustment,
+                "tags": ["reflection", "ethics", "monitor"]
+            }
+            with open(REFLECTIVE_SUMMARY_DIR / summary_filename, "w", encoding="utf-8") as sf:
+                json.dump(summary_data, sf, indent=2)
+
     except Exception as e:
         reasons.append(f"Memory logging failed: {e}")
 
-    # ✅ Inline meta-cognitive summary
+    # Meta-cognitive loop
     try:
         meta_summary = MetaCognitiveReflection.run()
         if meta_summary:
@@ -103,7 +130,7 @@ def run(context: ContextBundle, prior_thoughts: Optional[List[AgentThought]] = N
                 context="Meta-cognitive summary following reflection.",
                 insight=meta_summary["insight"],
                 behavioral_adjustment=meta_summary["behavioral_adjustment"],
-                reflective_summary=None,
+                reflective_summary=meta_summary["meta_reflection"],
                 relevance_score=0.85,
                 tags=meta_summary["tags"]
             )
@@ -128,8 +155,8 @@ class MetaCognitiveReflection:
 
     @staticmethod
     def run() -> Optional[dict]:
-        memory_path = "utils/memorystore.jsonl"
-        if not os.path.exists(memory_path):
+        memory_path = MEMORY_JSONL_PATH
+        if not memory_path.exists():
             return None
 
         try:
@@ -145,27 +172,33 @@ class MetaCognitiveReflection:
         )
 
         prompt = f"""
-You are the Meta-Learning Supervisor. Below is the system's most recent reasoning trace.
+        You are the Reflective Self-Monitor agent. Below is the system's most recent reasoning trace across multiple cognitive agents.
 
-REASONING SNAPSHOT:
-{reasoning_summary}
+        REASONING SNAPSHOT:
+        {reasoning_summary}
 
-Based on this trace, reflect on:
-- What patterns or blindspots are emerging?
-- How should behavior evolve?
-- Which tags capture this episode?
+        Your task is to engage in **deep self-reflection** on the patterns and tendencies revealed by this trace.
 
-Return ONLY compact JSON:
-- insight
-- behavioral_adjustment
-- tags (3–5 keywords)
-- key_points (2–3 bullets of internal notes)
-"""
+        Focus your reflection on:
+        - Recurring habits, blindspots, or oversights in reasoning
+        - Ethical tone, emotional bias, or overstepping boundaries
+        - Behavioral drift or deviation from Trinity alignment
+        - Missed opportunities for clarity, humility, or caution
+        - Any contradictions or conflicting signals
+
+        Use these insights to recommend subtle but meaningful behavioral adjustments for future cycles. Be neutral, analytical, and improvement-oriented.
+
+        Return ONLY structured JSON with these fields:
+        - insight (a concise summary of the emerging patterns)
+        - behavioral_adjustment (a specific recommendation to improve)
+        - tags (3–5 keywords capturing this episode's traits)
+        - key_points (2–3 internal bullet points of raw reflection)
+        """
 
         try:
             llm_response = generate_response(
                 prompt=prompt.strip(),
-                system_prompt="You are a Trinity-aligned compact cognition agent. Reply ONLY with clean JSON."
+                system_prompt="You are a Trinity-aligned self-reflective cognition agent. Your role is to analyze past thought patterns and suggest refinements to improve reasoning integrity, neutrality, and alignment. You must respond ONLY in valid, compact JSON — no narrative, no markdown, no fluff."
             ).strip()
 
             reflection_data = json.loads(llm_response)

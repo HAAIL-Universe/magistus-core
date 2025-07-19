@@ -12,9 +12,9 @@ except ImportError:
     def log_debug(msg): pass  # Silent fallback
 
 try:
-    from memory import search_memory
+    from meta_learning.memory_index_entry import load_memory_index
 except ImportError:
-    def search_memory(query): return []  # Stub fallback
+    def load_memory_index(limit=50): return []  # Stub fallback
 
 try:
     from llm_wrapper import generate_response
@@ -47,9 +47,6 @@ class TaskScheduler:
         self._load_tasks()
 
     def schedule_task(self, task: str, relevance_score: float):
-        """
-        Adds a task to the queue or boosts relevance if duplicate.
-        """
         timestamp = datetime.utcnow().isoformat()
         for entry in self.tasks:
             if entry.task == task:
@@ -82,24 +79,31 @@ class TaskScheduler:
         for task in self.tasks:
             last_update = datetime.fromisoformat(task.last_updated).timestamp()
             elapsed = now - last_update
-            decay = decay_rate * (elapsed / 3600)  # decay per hour
+            decay = decay_rate * (elapsed / 3600)
             task.relevance = max(0.0, task.relevance - decay)
             task.last_updated = datetime.utcnow().isoformat()
         self._save_tasks()
         log_debug("[TaskScheduler] Relevance decay applied to all tasks.")
 
     def resurface_from_memory(self) -> List[str]:
-        candidates = search_memory("unfinished task OR reminder OR to-do")
-        matched = [c for c in candidates if "task" in c.lower()]
+        entries = load_memory_index(limit=50)
+        matched = []
+
+        for e in entries:
+            context = e.get("context", "").lower()
+            summary = e.get("reflective_summary", "").lower()
+            tags = [t.lower() for t in e.get("tags", [])]
+
+            if any(kw in context or kw in summary or "task" in tags for kw in ["unfinished", "reminder", "to-do"]):
+                task_text = e.get("context", "") or e.get("reflective_summary", "")
+                if task_text:
+                    self.schedule_task(task_text.strip(), relevance_score=0.6)
+                    matched.append(task_text.strip())
+
         log_debug(f"[TaskScheduler] Resurfaced {len(matched)} tasks from memory.")
-        for m in matched:
-            self.schedule_task(m, relevance_score=0.6)
         return matched
 
     def parse_natural_task(self, user_text: str) -> str:
-        """
-        Optional LLM-based method to extract task intent from natural language input.
-        """
         if not LLM_AVAILABLE:
             log_debug("[TaskScheduler] LLM wrapper not available. Skipping parse.")
             return ""
@@ -138,22 +142,15 @@ class TaskScheduler:
 
 # Agent entrypoint
 def TaskSchedulerAgent(context: ContextBundle, _: List[AgentThought] = []) -> AgentThought:
-    """
-    Uses TaskScheduler to track cognitive reminders and surface important tasks.
-    Returns top priorities as AgentThought content.
-    """
     scheduler = TaskScheduler()
     summary_lines = []
 
-    # Decay relevance first
     scheduler.decay_relevance()
 
-    # Resurface tasks from memory
     memory_resurfaced = scheduler.resurface_from_memory()
     if memory_resurfaced:
         summary_lines.append(f"📂 Resurfaced {len(memory_resurfaced)} task(s) from memory.")
 
-    # Extract task from user input
     user_input = getattr(context, "user_input", "") or getattr(context, "input_text", "")
     if user_input:
         task = scheduler.parse_natural_task(user_input)
@@ -161,7 +158,6 @@ def TaskSchedulerAgent(context: ContextBundle, _: List[AgentThought] = []) -> Ag
             scheduler.schedule_task(task, relevance_score=0.7)
             summary_lines.append(f"📝 New task parsed and added: '{task}'")
 
-    # Retrieve currently due tasks
     due = scheduler.retrieve_due_tasks()
     if due:
         summary_lines.append("🔔 Tasks due now:")
